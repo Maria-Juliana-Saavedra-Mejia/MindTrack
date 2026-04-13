@@ -1,0 +1,171 @@
+# 🧠 MindTrack — Product Requirements Document (PRD)
+
+---
+
+## 1. Overview
+
+MindTrack is a web application that helps people build better habits and improve their daily productivity. The goal of the app is to give users a simple way to track what they do every day and see their progress over time.
+
+Many people try to stay consistent with habits like studying, exercising, or sleeping well, but they often lose motivation or forget to track their progress. MindTrack solves this problem by organizing everything in one place and showing clear results.
+
+---
+
+## 2. Problem Statement
+
+People struggle to stay consistent with their habits because:
+- They don’t track their progress regularly
+- They don’t see clear results over time
+- They don’t know what habits are working best for them
+
+This leads to low motivation and poor productivity.
+
+---
+
+## 3. Solution
+
+MindTrack provides a simple system where users can:
+- Create habits
+- Log their daily activities
+- See their progress and streaks
+- Understand their behavior over time
+
+The application will store this data and display it in a clear and easy-to-use interface.
+
+---
+
+## 4. Target Users
+
+- Students who want to improve study habits  
+- Athletes tracking training routines  
+- Anyone trying to build consistent daily habits  
+
+---
+
+## 5. Core Features
+
+### 5.1 Habit Management
+Users can:
+- Create a new habit  
+- Edit an existing habit  
+- Delete a habit  
+- View all their habits  
+
+---
+
+### 5.2 Activity Logging
+Users can:
+- Record daily progress for each habit  
+- Mark habits as completed or missed  
+- Add notes (optional)  
+
+---
+
+### 5.3 Progress Tracking
+The system will:
+- Show how often a habit is completed  
+- Track streaks (how many days in a row)  
+- Display past activity  
+
+---
+
+### 5.4 Input Validation
+The system will:
+- Prevent empty or incorrect inputs  
+- Show clear error messages  
+
+---
+
+## 6. User Flow (Simple)
+
+1. User opens the app  
+2. User creates a habit (example: “Study 2 hours”)  
+3. Each day, the user logs their activity  
+4. The app stores the data  
+5. The user can see their progress and streak  
+
+---
+
+## 7. Technical Overview (Simple)
+
+The system will have three main parts:
+
+- **Frontend:**  
+  The part the user sees (HTML, CSS, JavaScript)
+
+- **Backend:**  
+  The logic of the application (Python with FastAPI)
+
+- **Database:**  
+  Where data is stored (MongoDB)
+
+These parts work together so users can interact with the system and save their data.
+
+---
+
+## 8. Data Storage
+
+The system will store:
+- User habits  
+- Daily activity logs  
+- Progress information  
+
+Each habit can have many activity logs.
+
+---
+
+## 9. Non-Functional Requirements
+
+- The app should be easy to use  
+- The system should handle errors properly  
+- The app should respond quickly  
+- The code should be organized and easy to maintain  
+
+---
+
+## 10. Testing Requirements
+
+The system must be tested to make sure it works correctly:
+- Creating habits works  
+- Logging activities works  
+- Invalid inputs are handled correctly  
+- Data is saved and retrieved properly  
+
+At least 5 tests will be included.
+
+---
+
+## 11. Development Plan (7 Days)
+
+- Day 1: Planning and design  
+- Day 2: Project setup  
+- Day 3: Models and logic  
+- Day 4: API development  
+- Day 5: Core features complete  
+- Day 6: Testing  
+- Day 7: Final improvements and presentation  
+
+---
+
+## 12. Success Criteria
+
+The project will be successful if:
+- Users can create and manage habits  
+- Users can log daily activities  
+- The system correctly stores and displays data  
+- The application runs without errors  
+- All main features are working  
+
+---
+
+## 13. Future Improvements (Optional)
+
+- Add AI recommendations  
+- Add user authentication (login system)  
+- Add charts and visual dashboards  
+- Deploy the app online  
+
+---
+
+<p align="center">
+  MindTrack PRD — Software Engineering Project
+</p>
