@@ -1,0 +1,180 @@
+{# templates/log.html #}
+{% extends "base.html" %}
+{% block title %}MindTrack — Log Calendar{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+{% endblock %}
+{% block page_title %}Activity Log{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="calendar-header">
+    <button class="btn-ghost" type="button" id="prev-month">←</button>
+    <h3 id="month-label" style="margin: 0"></h3>
+    <button class="btn-ghost" type="button" id="next-month">→</button>
+  </div>
+  <div class="calendar-grid" id="weekdays"></div>
+  <div class="calendar-grid" id="calendar-grid"></div>
+</div>
+<div class="modal" id="day-modal">
+  <div class="modal-card">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <h3 id="modal-title" style="margin: 0"></h3>
+      <button class="btn-ghost" type="button" id="close-modal">Close</button>
+    </div>
+    <div id="modal-body" style="margin-top: 1rem"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  if (!localStorage.getItem("access_token")) {
+    window.location.href = mindtrackAppPath("login");
+  }
+  const user = JSON.parse(localStorage.getItem("mindtrack_user") || "{}");
+  document.getElementById("user-name").textContent = user.full_name || "Student";
+  const initials = (user.full_name || "MT")
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  document.getElementById("user-initials").textContent = initials;
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    try {
+      await apiFetch("/api/auth/logout", "POST");
+    } catch (e) {}
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("mindtrack_user");
+    window.location.href = mindtrackAppPath("login");
+  });
+
+  let habits = [];
+  let logs = [];
+  let viewDate = new Date();
+
+  async function refreshData() {
+    habits = (await apiFetch("/api/habits")).habits || [];
+    const start = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth(), 1));
+    const end = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + 1, 0, 23, 59, 59));
+    logs =
+      (
+        await apiFetch(
+          `/api/logs?from=${start.toISOString()}&to=${end.toISOString()}`
+        )
+      ).logs || [];
+  }
+
+  function habitColor(habitId) {
+    const h = habits.find((x) => x.id === habitId);
+    return h ? h.color : "#0F6E56";
+  }
+
+  function habitName(habitId) {
+    const h = habits.find((x) => x.id === habitId);
+    return h ? h.name : "Habit";
+  }
+
+  function renderCalendar() {
+    const monthLabel = document.getElementById("month-label");
+    monthLabel.textContent = viewDate.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    });
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const wd = document.getElementById("weekdays");
+    wd.innerHTML = "";
+    weekdays.forEach((d) => {
+      const cell = document.createElement("div");
+      cell.className = "calendar-weekday";
+      cell.textContent = d;
+      wd.appendChild(cell);
+    });
+    const grid = document.getElementById("calendar-grid");
+    grid.innerHTML = "";
+    const first = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth(), 1));
+    const startWeekday = first.getUTCDay();
+    const daysInMonth = new Date(
+      Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + 1, 0)
+    ).getUTCDate();
+    for (let i = 0; i < startWeekday; i += 1) {
+      const cell = document.createElement("div");
+      cell.className = "calendar-day muted";
+      grid.appendChild(cell);
+    }
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const cell = document.createElement("div");
+      cell.className = "calendar-day";
+      const iso = new Date(
+        Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth(), day)
+      )
+        .toISOString()
+        .slice(0, 10);
+      cell.innerHTML = `<div style="font-weight:600;">${day}</div><div class="dots" data-day="${iso}"></div>`;
+      const dayLogs = logs.filter((l) => l.logged_at.startsWith(iso));
+      const uniqueHabits = {};
+      dayLogs.forEach((l) => {
+        uniqueHabits[l.habit_id] = true;
+      });
+      const dots = cell.querySelector(".dots");
+      Object.keys(uniqueHabits).forEach((hid) => {
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.background = habitColor(hid);
+        dots.appendChild(dot);
+      });
+      cell.addEventListener("click", () => openModal(iso, dayLogs));
+      grid.appendChild(cell);
+    }
+  }
+
+  function openModal(iso, dayLogs) {
+    const modal = document.getElementById("day-modal");
+    document.getElementById("modal-title").textContent = `Logs for ${iso}`;
+    const body = document.getElementById("modal-body");
+    body.innerHTML = "";
+    if (!dayLogs.length) {
+      body.textContent = "No logs for this day.";
+    } else {
+      dayLogs.forEach((log) => {
+        const row = document.createElement("div");
+        row.style.borderBottom = "1px solid #e5e7eb";
+        row.style.padding = "0.5rem 0";
+        row.innerHTML = `<div><strong>${habitName(log.habit_id)}</strong></div><div style="color:#6b7280;">${
+          log.note || "No note"
+        }</div>`;
+        const del = document.createElement("button");
+        del.className = "btn-ghost";
+        del.textContent = "Delete";
+        del.addEventListener("click", async () => {
+          await apiFetch(`/api/logs/${log.id}`, "DELETE");
+          modal.classList.remove("show");
+          init();
+        });
+        row.appendChild(del);
+        body.appendChild(row);
+      });
+    }
+    modal.classList.add("show");
+  }
+
+  document.getElementById("close-modal").addEventListener("click", () => {
+    document.getElementById("day-modal").classList.remove("show");
+  });
+
+  document.getElementById("prev-month").addEventListener("click", () => {
+    viewDate = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() - 1, 1));
+    init();
+  });
+  document.getElementById("next-month").addEventListener("click", () => {
+    viewDate = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + 1, 1));
+    init();
+  });
+
+  async function init() {
+    await refreshData();
+    renderCalendar();
+  }
+
+  init();
+</script>
+{% endblock %}

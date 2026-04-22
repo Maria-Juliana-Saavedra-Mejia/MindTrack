@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      GitHub Pages (project site): set base to your repo path, e.g. /MindTrack/
+      Backend API: set to your hosted Flask root, e.g. https://api.example.com
+    -->
+    <meta name="mindtrack-base-path" content="" />
+    <meta name="mindtrack-api-base" content="" />
+    <title>MindTrack — Login</title>
+    <script>
+      (function () {
+        var meta = document.querySelector('meta[name="mindtrack-base-path"]');
+        if (meta && meta.getAttribute("content") && String(meta.getAttribute("content")).trim() !== "") {
+          window.MINDTRACK_BASE = String(meta.getAttribute("content")).trim().replace(/\/?$/, "/");
+        } else {
+          window.MINDTRACK_BASE = "/";
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="frontend/static/css/login.css" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <div class="brand-panel">
+        <div>
+          <div class="brand-logo-wrap">
+            <img src="frontend/static/images/mindtrack-logo.png" alt="MindTrack" class="brand-logo" width="320" />
+          </div>
+          <p class="tagline">Build habits. Track progress. Stay consistent.</p>
+        </div>
+        <ul class="feature-list">
+          <li>✔ Personalized streak tracking</li>
+          <li>✔ Visual progress with charts</li>
+          <li>✔ AI coach insights on demand</li>
+        </ul>
+      </div>
+      <div class="form-panel">
+        <div class="auth-card">
+          <div class="tabs">
+            <button type="button" class="tab-button active" id="tab-login">Log In</button>
+            <button type="button" class="tab-button" id="tab-register">Register</button>
+          </div>
+          <div class="tab-panel active" id="panel-login">
+            <form id="login-form" class="form-grid">
+              <div>
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" autocomplete="email" />
+                <div class="field-error" id="login-email-error"></div>
+              </div>
+              <div>
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" autocomplete="current-password" />
+                <div class="field-error" id="login-password-error"></div>
+              </div>
+              <label class="checkbox-row">
+                <input type="checkbox" id="remember-me" />
+                Remember me
+              </label>
+              <button type="submit" class="btn-primary">Log In</button>
+            </form>
+          </div>
+          <div class="tab-panel" id="panel-register">
+            <form id="register-form" class="form-grid">
+              <div>
+                <label for="register-name">Full Name</label>
+                <input type="text" id="register-name" autocomplete="name" />
+                <div class="field-error" id="reg-name-error"></div>
+              </div>
+              <div>
+                <label for="register-email">Email</label>
+                <input type="email" id="register-email" autocomplete="email" />
+                <div class="field-error" id="reg-email-error"></div>
+              </div>
+              <div>
+                <label for="register-password">Password</label>
+                <input type="password" id="register-password" autocomplete="new-password" />
+                <div class="field-error" id="reg-pass-error"></div>
+              </div>
+              <div>
+                <label for="register-confirm">Confirm Password</label>
+                <input type="password" id="register-confirm" autocomplete="new-password" />
+                <div class="field-error" id="reg-confirm-error"></div>
+              </div>
+              <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="frontend/static/js/api.js"></script>
+    <script src="frontend/static/js/auth.js"></script>
+  </body>
+</html>

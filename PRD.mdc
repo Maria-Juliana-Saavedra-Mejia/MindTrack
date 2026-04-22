@@ -1,171 +1,96 @@
-# 🧠 MindTrack — Product Requirements Document (PRD)
-
+---
+title: MindTrack Product Requirements
+description: Product requirements aligned with the shipped MindTrack application
 ---
 
-## 1. Overview
+# MindTrack — Product Requirements
 
-MindTrack is a web application that helps people build better habits and improve their daily productivity. The goal of the app is to give users a simple way to track what they do every day and see their progress over time.
+## Vision
 
-Many people try to stay consistent with habits like studying, exercising, or sleeping well, but they often lose motivation or forget to track their progress. MindTrack solves this problem by organizing everything in one place and showing clear results.
+MindTrack helps students and young professionals build consistency: one place to define habits, log progress, see streaks and trends, and get occasional AI encouragement grounded in their own data.
 
----
+## Problem
 
-## 2. Problem Statement
+People often abandon habits because progress is invisible, logging is tedious, and motivation drops when there is no feedback loop. Spreadsheets and generic reminders do not tie habits, history, and gentle coaching together.
 
-People struggle to stay consistent with their habits because:
-- They don’t track their progress regularly
-- They don’t see clear results over time
-- They don’t know what habits are working best for them
+## Solution
 
-This leads to low motivation and poor productivity.
+A browser-based application with a clear login experience, habit management, fast logging (including one-tap completion on the dashboard), visual summaries (charts and calendar), and optional AI-generated insights based on recent activity.
 
----
+## Target users
 
-## 3. Solution
+- University students balancing study, health, and wellbeing routines.
+- Early-career professionals building productivity and mindfulness habits.
+- Anyone who prefers a lightweight web app over installing native clients.
 
-MindTrack provides a simple system where users can:
-- Create habits
-- Log their daily activities
-- See their progress and streaks
-- Understand their behavior over time
+## In-scope features (implemented)
 
-The application will store this data and display it in a clear and easy-to-use interface.
+**Authentication**
 
----
+- Register with full name, email, and password (client and server validation).
+- Login with JWT stored in the browser; logout clears client session.
+- Protected API routes require a valid Bearer token.
 
-## 4. Target Users
+**Habits**
 
-- Students who want to improve study habits  
-- Athletes tracking training routines  
-- Anyone trying to build consistent daily habits  
+- Create, list, read, update, and delete habits per user.
+- Fields include name, description, frequency (daily or weekly), category, color, emoji icon, active flag.
 
----
+**Logging**
 
-## 5. Core Features
+- Log a completion for a habit with optional note.
+- List logs with filters (habit, date range).
+- Delete a log entry.
+- Streak calculation from consecutive calendar days with logs.
+- Summary of completion rates over the last 30 days per habit.
 
-### 5.1 Habit Management
-Users can:
-- Create a new habit  
-- Edit an existing habit  
-- Delete a habit  
-- View all their habits  
+**Dashboard**
 
----
+- KPI cards: active habits, today’s completions, longest current streak.
+- Line chart of daily completions over the last 30 days (Chart.js).
+- AI insight card: compliment, observation, tip; refresh triggers a new generation.
+- Quick log list for today’s habits with checkmark actions.
 
-### 5.2 Activity Logging
-Users can:
-- Record daily progress for each habit  
-- Mark habits as completed or missed  
-- Add notes (optional)  
+**Calendar log view**
 
----
+- Month grid with per-day indicators for completed habits.
+- Day modal listing logs with delete.
 
-### 5.3 Progress Tracking
-The system will:
-- Show how often a habit is completed  
-- Track streaks (how many days in a row)  
-- Display past activity  
+**Non-user-facing**
 
----
+- Structured logging to console and rotating file.
+- JSON error responses with consistent shape for API errors.
+- GitHub Actions: lint, tests, minimum code coverage.
 
-### 5.4 Input Validation
-The system will:
-- Prevent empty or incorrect inputs  
-- Show clear error messages  
+**Tech stack (fixed)**
 
----
+- Backend: Python 3.11, Flask, PyMongo, PyJWT, bcrypt, OpenAI Python SDK (`gpt-4o-mini`).
+- Frontend: HTML5, CSS3, vanilla JavaScript; Chart.js via CDN.
+- Database: MongoDB.
+- Tests: pytest, pytest-mock, pytest-cov; flake8 for lint.
 
-## 6. User Flow (Simple)
+## Configuration model
 
-1. User opens the app  
-2. User creates a habit (example: “Study 2 hours”)  
-3. Each day, the user logs their activity  
-4. The app stores the data  
-5. The user can see their progress and streak  
+- End users copy `.env.example` to `.env` and supply **only** `MONGO_URI` and `MONGO_DB_NAME`.
+- JWT and OpenAI keys are intended to be supplied by the **deployment environment** in production; development may use application defaults documented in the repository README.
 
----
+## Non-functional requirements
 
-## 7. Technical Overview (Simple)
+- **Security**: Passwords hashed with bcrypt; JWT for API auth; HTTPS expected in production deployments.
+- **Usability**: Responsive layout for mobile and desktop; accessible form labels and inline validation on the login/register page.
+- **Reliability**: API errors return JSON with message and status; server-side logging for troubleshooting.
+- **Maintainability**: Automated tests and CI gate on coverage threshold.
 
-The system will have three main parts:
+## Out of scope (current product)
 
-- **Frontend:**  
-  The part the user sees (HTML, CSS, JavaScript)
+- Native iOS or Android apps.
+- Social login (OAuth / Google / Apple).
+- Multi-tenant organizations, teams, or shared workspaces.
+- Server-side session stores or JWT revocation lists (tokens are stateless until expiry).
+- Offline-first or sync across devices beyond what the browser provides.
 
-- **Backend:**  
-  The logic of the application (Python with FastAPI)
+## Future work (ideas)
 
-- **Database:**  
-  Where data is stored (MongoDB)
-
-These parts work together so users can interact with the system and save their data.
-
----
-
-## 8. Data Storage
-
-The system will store:
-- User habits  
-- Daily activity logs  
-- Progress information  
-
-Each habit can have many activity logs.
-
----
-
-## 9. Non-Functional Requirements
-
-- The app should be easy to use  
-- The system should handle errors properly  
-- The app should respond quickly  
-- The code should be organized and easy to maintain  
-
----
-
-## 10. Testing Requirements
-
-The system must be tested to make sure it works correctly:
-- Creating habits works  
-- Logging activities works  
-- Invalid inputs are handled correctly  
-- Data is saved and retrieved properly  
-
-At least 5 tests will be included.
-
----
-
-## 11. Development Plan (7 Days)
-
-- Day 1: Planning and design  
-- Day 2: Project setup  
-- Day 3: Models and logic  
-- Day 4: API development  
-- Day 5: Core features complete  
-- Day 6: Testing  
-- Day 7: Final improvements and presentation  
-
----
-
-## 12. Success Criteria
-
-The project will be successful if:
-- Users can create and manage habits  
-- Users can log daily activities  
-- The system correctly stores and displays data  
-- The application runs without errors  
-- All main features are working  
-
----
-
-## 13. Future Improvements (Optional)
-
-- Add AI recommendations  
-- Add user authentication (login system)  
-- Add charts and visual dashboards  
-- Deploy the app online  
-
----
-
-<p align="center">
-  MindTrack PRD — Software Engineering Project
-</p>
+- Email or push reminders based on user preferences.
+- Export data (CSV/JSON).
+- Stronger production secret management (e.g. vault integration).

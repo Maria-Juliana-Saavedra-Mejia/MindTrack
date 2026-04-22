@@ -1,0 +1,42 @@
+{# templates/dashboard.html #}
+{% extends "base.html" %}
+{% block title %}MindTrack — Dashboard{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="kpi-grid">
+  <div class="card kpi-card">
+    <h3>Active Habits</h3>
+    <div class="value" id="kpi-active">0</div>
+  </div>
+  <div class="card kpi-card">
+    <h3>Today's Completions</h3>
+    <div class="value" id="kpi-today">0</div>
+  </div>
+  <div class="card kpi-card">
+    <h3>Longest Current Streak</h3>
+    <div class="value" id="kpi-streak">0</div>
+  </div>
+</div>
+<div class="card chart-card">
+  <h3 style="margin-top: 0">Daily completions (last 30 days)</h3>
+  <canvas id="trend-chart" height="120"></canvas>
+</div>
+<div class="card ai-card">
+  <div style="display: flex; justify-content: space-between; align-items: center">
+    <h3 style="margin: 0">AI Insight</h3>
+    <button class="btn-primary" id="refresh-insight" type="button">Refresh Insight</button>
+  </div>
+  <div id="insight-body" style="margin-top: 1rem"></div>
+</div>
+<div class="card">
+  <h3 style="margin-top: 0">Quick Log</h3>
+  <div class="quick-log" id="quick-log"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

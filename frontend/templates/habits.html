@@ -1,0 +1,57 @@
+{# templates/habits.html #}
+{% extends "base.html" %}
+{% block title %}MindTrack — Habits{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/habits.css') }}" />
+{% endblock %}
+{% block page_title %}Habits{% endblock %}
+{% block content %}
+<div id="habit-list" class="habit-grid"></div>
+<button class="fab" id="fab" type="button" aria-label="Add habit">+</button>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+  <div style="display: flex; justify-content: space-between; align-items: center">
+    <h3 id="drawer-title" style="margin: 0">New habit</h3>
+    <button class="btn-ghost" type="button" id="close-drawer">Close</button>
+  </div>
+  <form id="habit-form" class="form-grid">
+    <div>
+      <label for="habit-name">Name</label>
+      <input type="text" id="habit-name" required />
+    </div>
+    <div>
+      <label for="habit-description">Description</label>
+      <textarea id="habit-description" rows="3" style="width: 100%; border-radius: 12px; border: 1px solid #e1e4e8"></textarea>
+    </div>
+    <div>
+      <label for="habit-frequency">Frequency</label>
+      <select id="habit-frequency" style="width: 100%; padding: 0.65rem; border-radius: 12px">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+      </select>
+    </div>
+    <div>
+      <label for="habit-category">Category</label>
+      <select id="habit-category" style="width: 100%; padding: 0.65rem; border-radius: 12px">
+        <option value="health">Health</option>
+        <option value="productivity">Productivity</option>
+        <option value="mindfulness">Mindfulness</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div>
+      <label for="habit-color">Color</label>
+      <input type="color" id="habit-color" value="#0F6E56" />
+    </div>
+    <div>
+      <label>Icon</label>
+      <input type="hidden" id="habit-icon" value="🎯" />
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <button class="btn-primary" type="submit">Save habit</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/habits.js') }}"></script>
+{% endblock %}

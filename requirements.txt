@@ -1,0 +1,11 @@
+flask
+flask-cors
+pymongo
+pyjwt
+bcrypt
+openai
+python-dotenv
+pytest
+pytest-mock
+pytest-cov
+flake8

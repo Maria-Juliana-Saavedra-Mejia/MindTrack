@@ -1,0 +1,95 @@
+/* static/css/global.css */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap");
+
+:root {
+  --color-primary: #0f6e56;
+  --color-primary-dark: #0a5744;
+  --color-bg: #ffffff;
+  --color-surface: #f5f6f7;
+  --color-border: #e1e4e8;
+  --color-text: #1f2933;
+  --color-muted: #6b7280;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --shadow-soft: 0 10px 30px rgba(15, 110, 86, 0.08);
+  --transition-fast: 0.2s ease;
+  --transition-med: 0.3s ease;
+  --font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-heading: "DM Serif Display", Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+h1,
+h2,
+h3,
+.page-title {
+  font-family: var(--font-heading);
+  letter-spacing: 0.02em;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.field-error {
+  color: #b42318;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}

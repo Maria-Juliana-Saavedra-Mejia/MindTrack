@@ -1,0 +1,59 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="mindtrack-base-path" content="/" />
+    <meta name="mindtrack-api-base" content="" />
+    <title>{% block title %}MindTrack{% endblock %}</title>
+    <script>
+      (function () {
+        var meta = document.querySelector('meta[name="mindtrack-base-path"]');
+        if (meta && meta.getAttribute("content") && String(meta.getAttribute("content")).trim() !== "") {
+          window.MINDTRACK_BASE = String(meta.getAttribute("content")).trim().replace(/\/?$/, "/");
+        } else {
+          window.MINDTRACK_BASE = "/";
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}" />
+    {% block styles %}{% endblock %}
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="logo">
+          <img
+            src="{{ url_for('static', filename='images/mindtrack-logo.png') }}"
+            alt="MindTrack"
+            class="app-logo"
+            width="200"
+          />
+        </div>
+        <nav>
+          <a href="/dashboard" class="{{ 'active' if request.path == '/dashboard' else '' }}"
+            >Dashboard</a
+          >
+          <a href="/habits" class="{{ 'active' if request.path == '/habits' else '' }}">Habits</a>
+          <a href="/log" class="{{ 'active' if request.path == '/log' else '' }}">Log</a>
+        </nav>
+        <button class="btn-ghost" id="logout-btn" style="color: #fff; border-color: #ffffff55">
+          Logout
+        </button>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <div>
+            <div class="page-title" style="font-size: 1.4rem">{% block page_title %}MindTrack{% endblock %}</div>
+            <div style="color: #6b7280" id="user-name">User</div>
+          </div>
+          <div class="avatar" id="user-initials">MT</div>
+        </header>
+        <main class="content">{% block content %}{% endblock %}</main>
+      </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
