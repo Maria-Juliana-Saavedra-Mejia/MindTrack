@@ -61,6 +61,23 @@ def test_health_endpoint(client):
     assert resp.get_json()["status"] == "ok"
 
 
+def test_api_cors_preflight_includes_allow_origin(client):
+    """Browser preflight (OPTIONS) must match /api/.* so CORS headers are set."""
+    resp = client.open(
+        "/api/auth/register",
+        method="OPTIONS",
+        headers={
+            "Origin": "http://127.0.0.1:5500",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type, authorization",
+        },
+    )
+    assert resp.status_code in (200, 204)
+    acao = resp.headers.get("Access-Control-Allow-Origin")
+    # CORS(app) defaults allow the request origin or * for all origins
+    assert acao in ("http://127.0.0.1:5500", "*")
+
+
 def test_static_login_css_and_logo_reachable(client):
     for path in ("/static/css/login.css", "/static/images/mindtrack-logo.png"):
         resp = client.get(path)

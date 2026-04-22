@@ -38,3 +38,103 @@ app.utils.error_handlers.UserAlreadyExistsError: Email already registered
 [2026-04-22 14:20:02] [INFO] [app.routes.logs] Created log 69e91f62bac149b934bd4fe4
 [2026-04-22 14:20:02] [INFO] [app.routes.logs] Fetched 0 logs for user 69e91f62bac149b934bd4fe5
 [2026-04-22 14:20:02] [INFO] [app.routes.logs] Streak for habit 69e91f62bac149b934bd4fe7: 0
+[2026-04-22 14:20:51] [INFO] [app.routes.auth] Login attempt for a@b.com
+[2026-04-22 14:20:51] [WARNING] [app.routes.auth] Login failed: Invalid email or password
+[2026-04-22 14:20:51] [INFO] [app.routes.auth] Register attempt for dup@example.com
+[2026-04-22 14:20:51] [ERROR] [app.routes.auth] Register failed: Email already registered
+Traceback (most recent call last):
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/routes/auth.py", line 22, in register
+    get_auth_service().register_user(payload)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/services/auth_service.py", line 29, in register_user
+    raise UserAlreadyExistsError("Email already registered")
+app.utils.error_handlers.UserAlreadyExistsError: Email already registered
+[2026-04-22 14:20:51] [INFO] [app.routes.auth] Logout request
+[2026-04-22 14:20:51] [INFO] [app.routes.auth] Profile request for user 69e91f931ef5ef28ca9fc697
+[2026-04-22 14:20:51] [INFO] [app.routes.habits] Listed habits for user 69e91f931ef5ef28ca9fc698
+[2026-04-22 14:20:51] [INFO] [app.routes.logs] Summary for user 69e91f931ef5ef28ca9fc699 with 0 habits
+[2026-04-22 14:20:51] [WARNING] [app.routes.habits] Create habit validation error: Invalid habit data
+[2026-04-22 14:20:51] [WARNING] [app.routes.ai] AI generate validation error: No active habits to analyze
+[2026-04-22 14:20:51] [INFO] [app.routes.logs] Created log 69e91f931ef5ef28ca9fc69e
+[2026-04-22 14:20:51] [INFO] [app.routes.logs] Fetched 0 logs for user 69e91f931ef5ef28ca9fc69f
+[2026-04-22 14:20:51] [INFO] [app.routes.logs] Streak for habit 69e91f931ef5ef28ca9fc6a1: 0
+[2026-04-22 14:30:46] [INFO] [app.routes.auth] Login attempt for a@b.com
+[2026-04-22 14:30:46] [WARNING] [app.routes.auth] Login failed: Invalid email or password
+[2026-04-22 14:30:46] [INFO] [app.routes.auth] Register attempt for dup@example.com
+[2026-04-22 14:30:46] [ERROR] [app.routes.auth] Register failed: Email already registered
+Traceback (most recent call last):
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/routes/auth.py", line 22, in register
+    get_auth_service().register_user(payload)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/services/auth_service.py", line 29, in register_user
+    raise UserAlreadyExistsError("Email already registered")
+app.utils.error_handlers.UserAlreadyExistsError: Email already registered
+[2026-04-22 14:30:46] [INFO] [app.routes.auth] Logout request
+[2026-04-22 14:30:46] [INFO] [app.routes.auth] Profile request for user 69e921e6491862c3bd91cc11
+[2026-04-22 14:30:46] [INFO] [app.routes.habits] Listed habits for user 69e921e6491862c3bd91cc12
+[2026-04-22 14:30:46] [INFO] [app.routes.logs] Summary for user 69e921e6491862c3bd91cc13 with 0 habits
+[2026-04-22 14:30:46] [WARNING] [app.routes.habits] Create habit validation error: Invalid habit data
+[2026-04-22 14:30:46] [WARNING] [app.routes.ai] AI generate validation error: No active habits to analyze
+[2026-04-22 14:30:46] [INFO] [app.routes.logs] Created log 69e921e6491862c3bd91cc18
+[2026-04-22 14:30:46] [INFO] [app.routes.logs] Fetched 0 logs for user 69e921e6491862c3bd91cc19
+[2026-04-22 14:30:46] [INFO] [app.routes.logs] Streak for habit 69e921e6491862c3bd91cc1b: 0
+[2026-04-22 14:32:52] [INFO] [app.routes.auth] Login attempt for a@b.com
+[2026-04-22 14:32:52] [WARNING] [app.routes.auth] Login failed: Invalid email or password
+[2026-04-22 14:32:52] [INFO] [app.routes.auth] Register attempt for dup@example.com
+[2026-04-22 14:32:52] [ERROR] [app.routes.auth] Register failed: Email already registered
+Traceback (most recent call last):
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/routes/auth.py", line 22, in register
+    get_auth_service().register_user(payload)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/services/auth_service.py", line 29, in register_user
+    raise UserAlreadyExistsError("Email already registered")
+app.utils.error_handlers.UserAlreadyExistsError: Email already registered
+[2026-04-22 14:32:52] [INFO] [app.routes.auth] Logout request
+[2026-04-22 14:32:52] [INFO] [app.routes.auth] Profile request for user 69e922646d690a6adf0e2992
+[2026-04-22 14:32:52] [INFO] [app.routes.habits] Listed habits for user 69e922646d690a6adf0e2993
+[2026-04-22 14:32:52] [INFO] [app.routes.logs] Summary for user 69e922646d690a6adf0e2994 with 0 habits
+[2026-04-22 14:32:52] [WARNING] [app.routes.habits] Create habit validation error: Invalid habit data
+[2026-04-22 14:32:52] [WARNING] [app.routes.ai] AI generate validation error: No active habits to analyze
+[2026-04-22 14:32:52] [INFO] [app.routes.logs] Created log 69e922646d690a6adf0e2999
+[2026-04-22 14:32:52] [INFO] [app.routes.logs] Fetched 0 logs for user 69e922646d690a6adf0e299a
+[2026-04-22 14:32:52] [INFO] [app.routes.logs] Streak for habit 69e922646d690a6adf0e299c: 0
+[2026-04-22 14:35:17] [INFO] [app.routes.auth] Login attempt for a@b.com
+[2026-04-22 14:35:17] [WARNING] [app.routes.auth] Login failed: Invalid email or password
+[2026-04-22 14:35:17] [INFO] [app.routes.auth] Register attempt for dup@example.com
+[2026-04-22 14:35:17] [ERROR] [app.routes.auth] Register failed: Email already registered
+Traceback (most recent call last):
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/routes/auth.py", line 22, in register
+    get_auth_service().register_user(payload)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/services/auth_service.py", line 29, in register_user
+    raise UserAlreadyExistsError("Email already registered")
+app.utils.error_handlers.UserAlreadyExistsError: Email already registered
+[2026-04-22 14:35:17] [INFO] [app.routes.auth] Logout request
+[2026-04-22 14:35:17] [INFO] [app.routes.auth] Profile request for user 69e922f5232624209aeec72c
+[2026-04-22 14:35:18] [INFO] [app.routes.habits] Listed habits for user 69e922f6232624209aeec72d
+[2026-04-22 14:35:18] [INFO] [app.routes.logs] Summary for user 69e922f6232624209aeec72e with 0 habits
+[2026-04-22 14:35:18] [WARNING] [app.routes.habits] Create habit validation error: Invalid habit data
+[2026-04-22 14:35:18] [WARNING] [app.routes.ai] AI generate validation error: No active habits to analyze
+[2026-04-22 14:35:18] [INFO] [app.routes.logs] Created log 69e922f6232624209aeec733
+[2026-04-22 14:35:18] [INFO] [app.routes.logs] Fetched 0 logs for user 69e922f6232624209aeec734
+[2026-04-22 14:35:18] [INFO] [app.routes.logs] Streak for habit 69e922f6232624209aeec736: 0
+[2026-04-22 14:37:13] [INFO] [app.routes.auth] Login attempt for a@b.com
+[2026-04-22 14:37:13] [WARNING] [app.routes.auth] Login failed: Invalid email or password
+[2026-04-22 14:37:13] [INFO] [app.routes.auth] Register attempt for dup@example.com
+[2026-04-22 14:37:13] [ERROR] [app.routes.auth] Register failed: Email already registered
+Traceback (most recent call last):
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/routes/auth.py", line 22, in register
+    get_auth_service().register_user(payload)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mariajulianasaavedra/Universidad/MindTrack/backend/app/services/auth_service.py", line 29, in register_user
+    raise UserAlreadyExistsError("Email already registered")
+app.utils.error_handlers.UserAlreadyExistsError: Email already registered
+[2026-04-22 14:37:13] [INFO] [app.routes.auth] Logout request
+[2026-04-22 14:37:13] [INFO] [app.routes.auth] Profile request for user 69e9236924709efd928a2c7e
+[2026-04-22 14:37:13] [INFO] [app.routes.habits] Listed habits for user 69e9236924709efd928a2c7f
+[2026-04-22 14:37:13] [INFO] [app.routes.logs] Summary for user 69e9236924709efd928a2c80 with 0 habits
+[2026-04-22 14:37:13] [WARNING] [app.routes.habits] Create habit validation error: Invalid habit data
+[2026-04-22 14:37:13] [WARNING] [app.routes.ai] AI generate validation error: No active habits to analyze
+[2026-04-22 14:37:13] [INFO] [app.routes.logs] Created log 69e9236924709efd928a2c85
+[2026-04-22 14:37:13] [INFO] [app.routes.logs] Fetched 0 logs for user 69e9236924709efd928a2c86
+[2026-04-22 14:37:13] [INFO] [app.routes.logs] Streak for habit 69e9236924709efd928a2c88: 0
