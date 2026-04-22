@@ -28,7 +28,7 @@ class AuthService:
         if self._users.find_one({"email": email}):
             raise UserAlreadyExistsError("Email already registered")
         user = User(full_name=full_name, email=email, password=password)
-        doc = user.to_dict(include_hash=True)
+        doc = user.to_dict(include_password=True)
         doc["email"] = user.email
         doc["full_name"] = user.full_name
         result = self._users.insert_one(doc)

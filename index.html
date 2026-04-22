@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
-      GitHub Pages: set mindtrack-base-path if the site is not at domain root.
-      API: set mindtrack-api-base meta, or MINDTRACK_DEFAULT_API below, or open once with
-      ?api=https://your-flask-host (https only, no /api path) to store the API in this browser.
+      Deployment (e.g. GitHub Pages + API on Render/Fly):
+      1) Set mindtrack-api-base to your public API base (https://your-api.onrender.com) — no /api suffix.
+         Or set window.MINDTRACK_DEFAULT_API in the script below, or one-time ?api=https://... (then saved in localStorage).
+      2) On the API server, set CORS_ORIGINS to this page's origin, e.g. CORS_ORIGINS=https://user.github.io
+         (and FLASK_ENV=production or ENV=production in production). Rebuild/restart the API after.
     -->
     <meta name="mindtrack-base-path" content="" />
     <meta name="mindtrack-api-base" content="" />

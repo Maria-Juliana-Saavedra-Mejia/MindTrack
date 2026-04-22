@@ -20,7 +20,7 @@ def test_register_success(auth_service, mock_db):
             "_id": inserted_id,
             "full_name": "New User",
             "email": "new@example.com",
-            "password_hash": "hash",
+            "password": "password123",
             "preferences": {"reminder_time": "09:00", "theme": "light"},
             "created_at": None,
             "last_login": None,

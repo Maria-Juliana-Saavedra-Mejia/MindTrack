@@ -70,10 +70,24 @@ The app uses the database named in `MONGO_DB_NAME`. Collections are created on f
 - `_id` (ObjectId)
 - `full_name` (string)
 - `email` (string, unique index)
-- `password_hash` (string, bcrypt)
+- `password` (string, stored as plain text for this demo; not suitable for production)
 - `created_at` (datetime)
 - `last_login` (datetime or null)
 - `preferences` (object): `reminder_time` (string), `theme` (string)
+
+Example `users` document (field `password` is what the app writes; `password_hash` is still read for older or external examples, but the value is compared as plain text in this project):
+
+```json
+{
+  "_id": { "$oid": "661f1a1a1a1a1a1a1a1a1a01" },
+  "email": "juan.rojas@example.com",
+  "full_name": "Juan Rojas",
+  "password": "mySecretPass123",
+  "created_at": { "$date": "2026-04-20T10:00:00.000Z" },
+  "last_login": { "$date": "2026-04-21T09:00:00.000Z" },
+  "preferences": { "reminder_time": "08:00", "theme": "light" }
+}
+```
 
 **`habits`**
 
@@ -94,6 +108,19 @@ The app uses the database named in `MONGO_DB_NAME`. Collections are created on f
 - `logged_at` (datetime, UTC)
 - `note` (string, optional)
 - `streak_count` (int, snapshot when logged)
+
+Example `habit_logs` document (`user_id` / `habit_id` must match real documents in `users` and `habits`):
+
+```json
+{
+  "_id": { "$oid": "662f2b2b2b2b2b2b2b2b2b02" },
+  "user_id": { "$oid": "661f1a1a1a1a1a1a1a1a1a01" },
+  "habit_id": { "$oid": "662e1c1c1c1c1c1c1c1c1c03" },
+  "logged_at": { "$date": "2026-04-22T12:30:00.000Z" },
+  "note": "Morning run",
+  "streak_count": 5
+}
+```
 
 **`ai_insights`**
 

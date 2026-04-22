@@ -40,19 +40,22 @@
  * - window.MINDTRACK_API_BASE, then MINDTRACK_DEFAULT_API, then meta mindtrack-api-base
  * - ?api=https://host (saved to localStorage; the query is then stripped from the address bar)
  * - localStorage mindtrack_api_base
- * - Local dev: Live Server ports (e.g. 5500) -> http://127.0.0.1:5000; else same-origin /api/...
+ * - Local dev on loopback (not port 5000) -> same host:5000; else same-origin /api/... (e.g. API+UI on one host)
+ * Deploy: set meta or MINDTRACK_DEFAULT_API to your deployed API; ensure CORS_ORIGINS on the server
+ * includes your static site's origin (see backend app config / env).
  */
 function _normalizeApiBase(s) {
   if (!s || !String(s).trim()) {
     return "";
   }
-  const t = String(s)
-    .trim()
-    .replace(/\/$/, "");
+  let t = String(s).trim().replace(/\/+$/, "");
   if (!/^https?:\/\//i.test(t)) {
     return "";
   }
-  return t;
+  /* Many hosts set the API as https://x.com — if they use https://x.com/api, we would
+   * otherwise build https://x.com/api/api/auth/... and get 404. Strip a trailing /api. */
+  t = t.replace(/\/api\/?$/i, "");
+  return t.replace(/\/$/, "");
 }
 
 function getApiBase() {
@@ -116,9 +119,12 @@ function getApiBase() {
   } catch (e) {
     /* private mode */
   }
-  const port = window.location.port;
-  if (["5500", "5501", "3000", "3001", "5173", "8080"].includes(port)) {
-    return "http://127.0.0.1:5000";
+  const h = window.location.hostname;
+  const p = String(window.location.port || "");
+  const isLoopback =
+    h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "0.0.0.0";
+  if (isLoopback && p && p !== "5000") {
+    return window.location.protocol + "//" + h + ":5000";
   }
   return "";
 }
@@ -157,7 +163,7 @@ async function apiFetch(endpoint, method = "GET", body = null) {
     throw new Error(
       "API URL is not set for this host. In index.html set " +
         "MINDTRACK_DEFAULT_API or the mindtrack-api-base meta to your " +
-        "Flask server URL (https://...)."
+        "API server root (https://...), with no /api suffix."
     );
   }
   const url = apiUrl(endpoint);
@@ -171,16 +177,43 @@ async function apiFetch(endpoint, method = "GET", body = null) {
     headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(body);
   }
-  const response = await fetch(url, options);
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (err) {
+    const health = String(url).replace(/\/api\/.*$/, "/health");
+    throw new Error(
+      "Could not reach the API: " + url + ". 1) Run the backend: python run.py. " +
+        "2) In the browser open " + health + " (same host/port as the API, usually :5000). " +
+        "3) If the page uses http but the API is https (or the reverse), the browser will block; keep both on http for local dev.",
+      { cause: err }
+    );
+  }
   const data = await response.json().catch(() => ({}));
+  let errText = data.message;
+  if (!errText && data.detail != null) {
+    if (typeof data.detail === "string") {
+      errText = data.detail;
+    } else if (Array.isArray(data.detail) && data.detail[0]) {
+      const d0 = data.detail[0];
+      errText = d0.msg || d0.message || String(d0);
+    }
+  }
   if (response.status === 401) {
     localStorage.removeItem("access_token");
     localStorage.removeItem("mindtrack_user");
     window.location.href = appHomeUrl();
-    throw new Error(data.message || "Unauthorized");
+    throw new Error(errText || "Unauthorized");
+  }
+  if (response.status === 404) {
+    throw new Error(
+      (errText || "Not found") +
+        ". Wrong URL: use the API server root in mindtrack-api-base (e.g. https://api.example.com) " +
+        "with no /api on the end. If you use GitHub Pages, the request must not go to the Pages host for /api/... ."
+    );
   }
   if (!response.ok) {
-    throw new Error(data.message || "Request failed");
+    throw new Error(errText || "Request failed");
   }
   return data;
 }

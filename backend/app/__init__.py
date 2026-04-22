@@ -117,23 +117,10 @@ def create_app():
             mimetype="image/svg+xml",
         )
 
-    # Regex must be /api/.* not /api/* so paths like /api/auth/register match.
+    # /api/* only; use r"/api/.*" not r"/api/*" (regex * repeats "/", not the rest of the path)
     CORS(
         app,
-        resources={
-            r"/api/.*": {
-                "origins": "*",
-                "allow_headers": ["Content-Type", "Authorization"],
-                "methods": [
-                    "GET",
-                    "POST",
-                    "PUT",
-                    "DELETE",
-                    "PATCH",
-                    "OPTIONS",
-                ],
-            }
-        },
+        resources=Config.flask_cors_api_resources(),
     )
 
     return app

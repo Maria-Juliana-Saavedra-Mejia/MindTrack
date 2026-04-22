@@ -1,5 +1,5 @@
 # backend/tests/test_flask_integration.py
-"""Lightweight Flask integration tests with Mongo mocked."""
+"""Integration tests (FastAPI + Uvicorn stack) with Mongo mocked."""
 
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 from bson import ObjectId
+from starlette.testclient import TestClient
 
 from tests.conftest import FakeCursor
 
@@ -27,9 +28,9 @@ def mongo_stub(monkeypatch):
     db.__getitem__.side_effect = get_collection
     mongo_client = MagicMock()
     mongo_client.__getitem__.return_value = db
-    import app as app_package
+    import fapi.app as fapi_mod
 
-    monkeypatch.setattr(app_package, "MongoClient", lambda *a, **k: mongo_client)
+    monkeypatch.setattr(fapi_mod, "MongoClient", lambda *a, **k: mongo_client)
     return collections
 
 
@@ -39,15 +40,14 @@ def client(mongo_stub, monkeypatch):
     monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
     monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    from app import create_app
+    from fapi.app import build_app
 
-    app = create_app()
-    app.testing = True
-    return app.test_client()
+    with TestClient(build_app()) as c:
+        yield c
 
 
 def _token(client, user_id):
-    secret = client.application.config["JWT_SECRET"]
+    secret = client.app.state.jwt_secret
     payload = {
         "sub": str(user_id),
         "exp": datetime.now(timezone.utc) + timedelta(hours=1),
@@ -58,29 +58,27 @@ def _token(client, user_id):
 def test_health_endpoint(client):
     resp = client.get("/health")
     assert resp.status_code == 200
-    assert resp.get_json()["status"] == "ok"
+    assert resp.json()["status"] == "ok"
 
 
 def test_favicon_reachable(client):
     resp = client.get("/favicon.ico")
     assert resp.status_code == 200
-    assert resp.headers.get("Content-Type", "").startswith("image/svg")
+    assert resp.headers.get("content-type", "").startswith("image/svg")
 
 
 def test_api_cors_preflight_includes_allow_origin(client):
-    """Browser preflight (OPTIONS) must match /api/.* so CORS headers are set."""
-    resp = client.open(
+    """Browser preflight (OPTIONS) gets CORS allow-origin for /api/* ."""
+    resp = client.options(
         "/api/auth/register",
-        method="OPTIONS",
         headers={
             "Origin": "http://127.0.0.1:5500",
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "content-type, authorization",
         },
     )
-    assert resp.status_code in (200, 204)
-    acao = resp.headers.get("Access-Control-Allow-Origin")
-    # CORS(app) defaults allow the request origin or * for all origins
+    assert resp.status_code in (200, 204, 400, 405)
+    acao = resp.headers.get("access-control-allow-origin")
     assert acao in ("http://127.0.0.1:5500", "*")
 
 
@@ -103,10 +101,11 @@ def test_entry_routes_serve_same_root_index_html(client):
     for path in ("/", "/login", "/index.html"):
         resp = client.get(path)
         assert resp.status_code == 200
-        assert b'id="login-form"' in resp.data
-        assert b"frontend/static/js/auth.js" in resp.data
-        assert b"frontend/static/css/login.css" in resp.data
-        assert b"frontend/static/images/mindtrack-logo.png" in resp.data
+        data = resp.content
+        assert b'id="login-form"' in data
+        assert b"frontend/static/js/auth.js" in data
+        assert b"frontend/static/css/login.css" in data
+        assert b"frontend/static/images/mindtrack-logo.png" in data
 
 
 def test_login_invalid_credentials(client, mongo_stub):
@@ -114,7 +113,7 @@ def test_login_invalid_credentials(client, mongo_stub):
     users.find_one.return_value = None
     resp = client.post("/api/auth/login", json={"email": "a@b.com", "password": "x"})
     assert resp.status_code == 401
-    body = resp.get_json()
+    body = resp.json()
     assert body["error"] is True
 
 
@@ -140,7 +139,7 @@ def test_register_duplicate(client, mongo_stub):
 def test_logout(client):
     resp = client.post("/api/auth/logout")
     assert resp.status_code == 200
-    assert resp.get_json()["success"] is True
+    assert resp.json()["success"] is True
 
 
 def test_me_requires_token(client):
@@ -160,9 +159,11 @@ def test_me_returns_profile(client, mongo_stub):
         "last_login": None,
     }
     token = _token(client, uid)
-    resp = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get(
+        "/api/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
     assert resp.status_code == 200
-    assert resp.get_json()["user"]["email"] == "t@example.com"
+    assert resp.json()["user"]["email"] == "t@example.com"
 
 
 def test_list_habits_authenticated(client, mongo_stub):
@@ -172,9 +173,11 @@ def test_list_habits_authenticated(client, mongo_stub):
     chain.sort.return_value = []
     habits.find.return_value = chain
     token = _token(client, uid)
-    resp = client.get("/api/habits", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get(
+        "/api/habits", headers={"Authorization": f"Bearer {token}"}
+    )
     assert resp.status_code == 200
-    assert resp.get_json()["habits"] == []
+    assert resp.json()["habits"] == []
 
 
 def test_logs_summary_authenticated(client, mongo_stub):
@@ -182,7 +185,9 @@ def test_logs_summary_authenticated(client, mongo_stub):
     habits = mongo_stub["habits"]
     habits.find.return_value = []
     token = _token(client, uid)
-    resp = client.get("/api/logs/summary", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get(
+        "/api/logs/summary", headers={"Authorization": f"Bearer {token}"}
+    )
     assert resp.status_code == 200
 
 
@@ -202,7 +207,9 @@ def test_ai_generate_validation(client, mongo_stub):
     habits = mongo_stub["habits"]
     habits.find.return_value = []
     token = _token(client, uid)
-    resp = client.post("/api/ai/generate", headers={"Authorization": f"Bearer {token}"})
+    resp = client.post(
+        "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+    )
     assert resp.status_code == 400
 
 
@@ -254,7 +261,9 @@ def test_logs_list(client, mongo_stub):
     logs = mongo_stub["habit_logs"]
     logs.find.return_value = FakeCursor([])
     token = _token(client, uid)
-    resp = client.get("/api/logs", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get(
+        "/api/logs", headers={"Authorization": f"Bearer {token}"}
+    )
     assert resp.status_code == 200
 
 

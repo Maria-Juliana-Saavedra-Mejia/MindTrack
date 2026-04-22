@@ -47,6 +47,81 @@ class Config:
     def _log_level():
         return os.getenv("LOG_LEVEL", "INFO").strip()
 
+    @staticmethod
+    def _runtime_env_name():
+        """'production' in deploy hosts; set FLASK_ENV=production (or ENV=production)."""
+        e = (os.getenv("FLASK_ENV") or os.getenv("ENV") or "development").strip().lower()
+        if e in ("prod", "production"):
+            return "production"
+        return e
+
+    @classmethod
+    def fastapi_cors_middleware_options(cls):
+        """
+        Kwargs for Starlette CORSMiddleware. Set CORS_ORIGINS in production, e.g.:
+        CORS_ORIGINS=https://user.github.io,https://app.example.com
+        (comma-separated browser origins, no /api path). If unset, non-production
+        allows any origin (*) so Live Server, localhost vs 127.0.0.1, and
+        any port all work. Production with no CORS_ORIGINS = no CORS (set env to fix).
+        """
+        raw = os.getenv("CORS_ORIGINS", "").strip()
+        if raw:
+            return {
+                "allow_origins": [o.strip() for o in raw.split(",") if o.strip()],
+                "allow_origin_regex": None,
+                "allow_credentials": False,
+                "allow_methods": ["*"],
+                "allow_headers": ["*"],
+            }
+        if cls._runtime_env_name() == "production":
+            return {
+                "allow_origins": [],
+                "allow_origin_regex": None,
+                "allow_credentials": False,
+                "allow_methods": ["*"],
+                "allow_headers": ["*"],
+            }
+        return {
+            "allow_origins": ["*"],
+            "allow_origin_regex": None,
+            "allow_credentials": False,
+            "allow_methods": ["*"],
+            "allow_headers": ["*"],
+        }
+
+    @classmethod
+    def flask_cors_api_resources(cls):
+        """
+        `resources` dict for flask_cors CORS() on /api/.* when using the Flask app factory
+        (same CORS_ORIGINS / production rules as fastapi_cors_middleware_options).
+        """
+        raw = os.getenv("CORS_ORIGINS", "").strip()
+        if raw:
+            o = [x.strip() for x in raw.split(",") if x.strip()]
+        elif cls._runtime_env_name() == "production":
+            o = []
+        else:
+            o = "*"
+        return {
+            r"/api/.*": {
+                "origins": o,
+                "methods": [
+                    "GET",
+                    "HEAD",
+                    "OPTIONS",
+                    "POST",
+                    "PUT",
+                    "PATCH",
+                    "DELETE",
+                ],
+                "allow_headers": [
+                    "Content-Type",
+                    "Authorization",
+                    "X-Requested-With",
+                ],
+            }
+        }
+
     @classmethod
     def validate(cls):
         """Require Mongo connection URI and database name (.env)."""

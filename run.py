@@ -1,5 +1,5 @@
 # run.py
-"""Application entrypoint for MindTrack."""
+"""Application entrypoint for MindTrack (FastAPI + Uvicorn)."""
 
 import os
 import sys
@@ -13,11 +13,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app import create_app
+from fapi.app import build_app
 
-app = create_app()
+app = build_app()
 
 
 if __name__ == "__main__":
+    import uvicorn
+
     port = int(os.getenv("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port, debug=app.config.get("DEBUG", False))
+    debug = os.getenv("FLASK_ENV", "development").lower() == "development"
+    uvicorn.run(
+        "run:app",
+        host="0.0.0.0",
+        port=port,
+        reload=debug,
+    )

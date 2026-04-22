@@ -5,7 +5,6 @@ import os
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-import bcrypt
 import pytest
 from bson import ObjectId
 
@@ -56,12 +55,11 @@ def log_service(mock_db, habit_service):
 
 @pytest.fixture
 def sample_user_dict():
-    password_hash = bcrypt.hashpw(b"goodpassword", bcrypt.gensalt()).decode()
     return {
         "_id": ObjectId(),
         "full_name": "Test User",
         "email": "user@example.com",
-        "password_hash": password_hash,
+        "password": "goodpassword",
         "preferences": {"reminder_time": "09:00", "theme": "light"},
         "created_at": datetime.now(timezone.utc),
         "last_login": None,

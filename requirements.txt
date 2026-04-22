@@ -1,8 +1,11 @@
 flask
 flask-cors
+fastapi
+uvicorn[standard]
+jinja2
+httpx
 pymongo
 pyjwt
-bcrypt
 openai
 python-dotenv
 pytest
