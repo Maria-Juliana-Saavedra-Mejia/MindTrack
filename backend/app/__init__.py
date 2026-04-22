@@ -4,8 +4,9 @@
 import os
 
 from bson import ObjectId
-from flask import Flask, make_response, render_template, request, send_from_directory
+from flask import Flask, render_template, send_file, send_from_directory
 from flask.json.provider import DefaultJSONProvider
+from flask_cors import CORS
 from pymongo import MongoClient
 
 from app.config import Config
@@ -36,21 +37,6 @@ def create_app():
     )
     app.config.update(flask_cfg)
     app.json = MongoJSONProvider(app)
-
-    @app.before_request
-    def _api_cors_preflight():
-        """Handle browser OPTIONS (preflight) before routing; 405/404 often omit CORS otherwise."""
-        if request.method != "OPTIONS" or not request.path.startswith("/api/"):
-            return None
-        r = make_response("", 204)
-        origin = request.headers.get("Origin", "*")
-        r.headers["Access-Control-Allow-Origin"] = origin
-        r.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        r.headers["Access-Control-Allow-Methods"] = (
-            "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-        )
-        r.headers["Access-Control-Max-Age"] = "600"
-        return r
 
     log = get_logger(__name__)
     log.setLevel(app.config.get("LOG_LEVEL", "INFO"))
@@ -124,22 +110,30 @@ def create_app():
     def frontend_static(filename):
         return send_from_directory(_frontend_static, filename)
 
-    @app.after_request
-    def _ensure_cors_on_api_responses(response):
-        if not request.path.startswith("/api/"):
-            return response
-        if "Access-Control-Allow-Origin" not in response.headers:
-            response.headers["Access-Control-Allow-Origin"] = request.headers.get(
-                "Origin", "*"
-            )
-        if "Access-Control-Allow-Headers" not in response.headers:
-            response.headers["Access-Control-Allow-Headers"] = (
-                "Content-Type, Authorization"
-            )
-        if "Access-Control-Allow-Methods" not in response.headers:
-            response.headers["Access-Control-Allow-Methods"] = (
-                "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-            )
-        return response
+    @app.get("/favicon.ico")
+    def _favicon():
+        return send_file(
+            os.path.join(_frontend_static, "favicon.svg"),
+            mimetype="image/svg+xml",
+        )
+
+    # Regex must be /api/.* not /api/* so paths like /api/auth/register match.
+    CORS(
+        app,
+        resources={
+            r"/api/.*": {
+                "origins": "*",
+                "allow_headers": ["Content-Type", "Authorization"],
+                "methods": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "DELETE",
+                    "PATCH",
+                    "OPTIONS",
+                ],
+            }
+        },
+    )
 
     return app

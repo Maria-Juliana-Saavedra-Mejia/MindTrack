@@ -7,6 +7,10 @@
     <meta name="mindtrack-base-path" content="/" />
     <meta name="mindtrack-api-base" content="" />
     <title>{% block title %}MindTrack{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
+    <script>
+      window.MINDTRACK_DEFAULT_API = window.MINDTRACK_DEFAULT_API || "";
+    </script>
     <script>
       (function () {
         var meta = document.querySelector('meta[name="mindtrack-base-path"]');
@@ -54,6 +58,7 @@
       </div>
     </div>
     <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user-header.js') }}"></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

@@ -30,15 +30,6 @@
   if (!localStorage.getItem("access_token")) {
     window.location.href = mindtrackAppPath("login");
   }
-  const user = JSON.parse(localStorage.getItem("mindtrack_user") || "{}");
-  document.getElementById("user-name").textContent = user.full_name || "Student";
-  const initials = (user.full_name || "MT")
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  document.getElementById("user-initials").textContent = initials;
   document.getElementById("logout-btn").addEventListener("click", async () => {
     try {
       await apiFetch("/api/auth/logout", "POST");

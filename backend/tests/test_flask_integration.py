@@ -61,6 +61,12 @@ def test_health_endpoint(client):
     assert resp.get_json()["status"] == "ok"
 
 
+def test_favicon_reachable(client):
+    resp = client.get("/favicon.ico")
+    assert resp.status_code == 200
+    assert resp.headers.get("Content-Type", "").startswith("image/svg")
+
+
 def test_api_cors_preflight_includes_allow_origin(client):
     """Browser preflight (OPTIONS) must match /api/.* so CORS headers are set."""
     resp = client.open(

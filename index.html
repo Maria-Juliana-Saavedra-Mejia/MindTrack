@@ -4,12 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
-      GitHub Pages (project site): set base to your repo path, e.g. /MindTrack/
-      Backend API: set to your hosted Flask root, e.g. https://api.example.com
+      GitHub Pages: set mindtrack-base-path if the site is not at domain root.
+      API: set mindtrack-api-base meta, or MINDTRACK_DEFAULT_API below, or open once with
+      ?api=https://your-flask-host (https only, no /api path) to store the API in this browser.
     -->
     <meta name="mindtrack-base-path" content="" />
     <meta name="mindtrack-api-base" content="" />
+    <link rel="icon" type="image/svg+xml" href="frontend/static/favicon.svg" />
     <title>MindTrack — Login</title>
+    <script>
+      window.MINDTRACK_DEFAULT_API = "";
+    </script>
     <script>
       (function () {
         var meta = document.querySelector('meta[name="mindtrack-base-path"]');
