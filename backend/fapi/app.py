@@ -11,8 +11,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pymongo import MongoClient
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
 from app.config import Config
 from app.services import AIService, AuthService, HabitService, LogService
@@ -21,37 +19,6 @@ from fapi.exception_handlers import register_domain_handlers
 from fapi.routers import ai, auth, habits, logs
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-
-
-class _ApiPreflightCorsMiddleware(BaseHTTPMiddleware):
-    """
-    Outermost HTTP layer: handle OPTIONS for /api/* with explicit CORS so browser
-    preflights always see Access-Control-Allow-Origin (belt-and-suspenders with
-    CORSMiddleware and odd Starlette/Starlette+proxy edge cases).
-    """
-
-    _ACAM = "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT"
-
-    async def dispatch(self, request, call_next):
-        path = request.url.path
-        if path.startswith("/api") and request.method == "OPTIONS":
-            arh = request.headers.get("access-control-request-headers", "")
-            hdrs = {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": self._ACAM,
-                "Access-Control-Max-Age": "600",
-            }
-            hdrs["Access-Control-Allow-Headers"] = (
-                arh
-                or "content-type, authorization, x-requested-with"
-            )
-            return Response(status_code=204, content=b"", headers=hdrs)
-        response = await call_next(request)
-        if path.startswith("/api") and not response.headers.get(
-            "access-control-allow-origin"
-        ):
-            response.headers["Access-Control-Allow-Origin"] = "*"
-        return response
 
 
 @asynccontextmanager
@@ -158,6 +125,4 @@ def build_app() -> FastAPI:
     # Register /summary and /streak before /{log_id} patterns for clarity
     app.include_router(logs.router)
     app.include_router(ai.router)
-    # Added last so it runs first (outermost) and can answer OPTIONS for /api before routing.
-    app.add_middleware(_ApiPreflightCorsMiddleware)
     return app
