@@ -61,6 +61,38 @@ def test_health_endpoint(client):
     assert resp.json()["status"] == "ok"
 
 
+def test_mindtrack_http_port_prefers_request_url_port(mongo_stub, monkeypatch):
+    """Echoes the port used in the HTTP request URL (reload-safe vs env-only)."""
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("MINDTRACK_HTTP_PORT", "9999")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5066") as c:
+        r = c.get("/mindtrack-http-port")
+    assert r.status_code == 200
+    assert r.text.strip() == "5066"
+
+
+def test_index_html_injects_dev_api_port_meta_from_request_url(mongo_stub, monkeypatch):
+    """Served login index fills mindtrack-dev-api-port so api.js matches run.py listen port."""
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("MINDTRACK_HTTP_PORT", "9999")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5077") as c:
+        r = c.get("/")
+    assert r.status_code == 200
+    body = r.text
+    assert 'content="5077"' in body
+    assert 'name="mindtrack-dev-api-port"' in body
+
+
 def test_favicon_reachable(client):
     resp = client.get("/favicon.ico")
     assert resp.status_code == 200

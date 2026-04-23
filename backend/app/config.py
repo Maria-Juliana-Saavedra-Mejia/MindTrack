@@ -122,6 +122,31 @@ class Config:
             }
         }
 
+    @staticmethod
+    def mongo_client_kwargs():
+        """
+        TLS options for PyMongo (Atlas uses TLS).
+
+        Uses certifi's CA bundle so Python can verify Atlas certificates when the
+        interpreter's default trust store is incomplete (common on macOS).
+
+        Set MONGO_TLS_INSECURE=1 only for local development if verification still fails
+        (disables certificate validation; never use in production).
+        """
+        insecure = os.getenv("MONGO_TLS_INSECURE", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if insecure:
+            return {"tlsAllowInvalidCertificates": True}
+        try:
+            import certifi
+
+            return {"tlsCAFile": certifi.where()}
+        except ImportError:
+            return {}
+
     @classmethod
     def validate(cls):
         """Require Mongo connection URI and database name (.env)."""

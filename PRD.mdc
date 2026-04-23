@@ -64,7 +64,7 @@ A browser-based application with a clear login experience, habit management, fas
 
 **Tech stack (fixed)**
 
-- Backend: Python 3.11, Flask, PyMongo, PyJWT, bcrypt, OpenAI Python SDK (`gpt-4o-mini`).
+- Backend: Python 3.11, FastAPI + Uvicorn (`python run.py`), PyMongo, PyJWT, OpenAI Python SDK (`gpt-4o-mini`). Legacy Flask factory remains in-repo for tests/utilities.
 - Frontend: HTML5, CSS3, vanilla JavaScript; Chart.js via CDN.
 - Database: MongoDB.
 - Tests: pytest, pytest-mock, pytest-cov; flake8 for lint.
@@ -76,7 +76,7 @@ A browser-based application with a clear login experience, habit management, fas
 
 ## Non-functional requirements
 
-- **Security**: Passwords hashed with bcrypt; JWT for API auth; HTTPS expected in production deployments.
+- **Security**: **Demo / local builds store passwords as plain text in MongoDB** (no bcrypt); login compares the submitted password to the stored string. Production deployments must replace this with password hashing and other hardening. JWT for API auth; HTTPS expected in production deployments.
 - **Usability**: Responsive layout for mobile and desktop; accessible form labels and inline validation on the login/register page.
 - **Reliability**: API errors return JSON with message and status; server-side logging for troubleshooting.
 - **Maintainability**: Automated tests and CI gate on coverage threshold.

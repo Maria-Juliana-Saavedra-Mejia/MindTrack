@@ -25,13 +25,53 @@ Edit `.env` and set only these two values:
 - `MONGO_URI` — connection string to your MongoDB cluster or host. Examples: `mongodb://localhost:27017` for local Mongo, or **`mongodb+srv://user:password@cluster...mongodb.net/`** for MongoDB Atlas. You may include or omit a trailing slash; the app strips trailing slashes before connecting. Put the **database name only** in `MONGO_DB_NAME`, not in the URI path, unless your provider requires otherwise (this project uses `MONGO_DB_NAME` as the database selector).
 - `MONGO_DB_NAME` — the logical database name, e.g. `mindtrack_db`.
 
-Start MongoDB, then run the app from the repository root:
+The database is **MongoDB** (not Mongoose—that is a Node.js ODM). You can browse the same cluster and database in **[MongoDB Compass](https://www.mongodb.com/products/compass)** using your **`MONGO_URI`** (and select **`MONGO_DB_NAME`** in the sidebar) to verify documents (`users`, `habits`, `habit_logs`, etc.) while the app or tests run.
+
+### Passwords (demo / coursework)
+
+User passwords are stored in MongoDB **as plain text** and compared with string equality on login (**no bcrypt** in this codebase). That keeps the project simple for local development and coursework; a real production service must use password hashing and other hardening.
+
+### Optional: integration tests (real MongoDB)
+
+With MongoDB running (for example **`docker compose up -d`** from the repo root), you can verify data is written and read from the database:
 
 ```bash
-python run.py
+source .venv/bin/activate
+export RUN_MONGO_INTEGRATION=1
+pytest backend/tests/test_mongo_integration.py -v -rs
 ```
 
-Open **http://127.0.0.1:5000/**, **http://127.0.0.1:5000/login**, or **http://127.0.0.1:5000/index.html** — all serve the **same** root **`index.html`** next to `run.py`, with the full login and register UI (no separate login template). Create an account on the **Register** tab, then you land on the dashboard.
+Append **`-rs`** so pytest prints **why** tests were skipped in the summary (plain **`-v`** hides skip reasons).
+
+Uses **`MONGO_URI`** from your **`.env`** (pytest loads `.env` from the repo root before defaults, same as **`python run.py`**). Integration tests create a throwaway database named like **`mindtrack_int_<random>`**, then **drop** it—you will not see it long in Compass. Without **`RUN_MONGO_INTEGRATION=1`**, those tests are skipped so CI passes without Mongo.
+
+If you set **`RUN_MONGO_INTEGRATION=1`** but pytest still reports **SKIPPED**, that means **nothing answered at **`MONGO_URI`** (often **connection refused** on **`localhost:27017`** when Mongo is not running). Fix by starting Mongo locally (**`docker compose up -d`** per [`.env.example`](.env.example)) or point **`MONGO_URI`** at **MongoDB Atlas** so the ping in the integration fixture succeeds.
+
+Start MongoDB (when using local **`mongodb://localhost:27017`**), then run the app from the repository root. **Activate the virtual environment first** (same terminal session where you installed packages): if you see `ModuleNotFoundError: No module named 'fastapi'`, you skipped `pip install -r requirements.txt` or are not using the `.venv` Python.
+
+```bash
+source .venv/bin/activate   # macOS/Linux; Windows: .venv\\Scripts\\activate
+python3 run.py
+```
+
+Open **http://127.0.0.1:5050/**, **http://127.0.0.1:5050/login**, or **http://127.0.0.1:5050/index.html** — all serve the **same** root **`index.html`** next to `run.py`, with the full login and register UI (no separate login template). Create an account on the **Register** tab, then you land on the dashboard. The default port is **5050** (not 5000) because on macOS **AirPlay Receiver** often binds port 5000; override with the `PORT` env var if needed.
+
+### Troubleshooting
+
+- **Quick API check (terminal)** — After **`python3 run.py`**, use the **port printed** in the banner (not necessarily **5050**). Run:
+
+  ```bash
+  curl -s "http://127.0.0.1:<port>/health"
+  curl -s "http://127.0.0.1:<port>/mindtrack-http-port"
+  ```
+
+  The first should return **`{"status":"ok"}`** only when MongoDB is reachable and the app finished startup. The second returns the **listen port** for this request. If **`health`** fails or hangs, fix **`MONGO_URI` / `MONGO_DB_NAME`** (and TLS; see below) — **no browser change will fix a server that exits on startup.**
+
+- **`pip install ...` → `Invalid requirement: '#'`** — Run **`pip install -r requirements.txt`** from the **MindTrack folder** (with `-r`). Do not pass a stray `#` as an argument. If you edited `requirements.txt`, each package must be on its own line; comment lines must start with `#` at the beginning of the line (see the sample file in the repo).
+- **`[Errno 48] Address already in use`** — If you did **not** set `PORT`, `run.py` tries the first free port in **5050–5059** and prints the real URL. **Open the app at that URL** (UI and API on the same port). If the app moved to e.g. 5051 and you use **Live Server** for `index.html`, set the API base to that port (see [index.html](index.html) / `?api=...` in the README deployment section) or stop the process on 5050. If you **set** `PORT` and it is still taken, the process list from **`lsof`** is printed to stderr when possible.
+- **MongoDB Atlas / TLS: `CERTIFICATE_VERIFY_FAILED` or `unable to get local issuer certificate`** — The app passes **certifi**’s CA bundle to PyMongo by default (`pip install -r requirements.txt` includes **certifi**). On macOS with a **python.org** build, also run **Install Certificates.command** from **Applications/Python 3.x**. If something on the network still breaks TLS (rare), you can set **`MONGO_TLS_INSECURE=1`** in `.env` **for local development only**—never in production.
+- **Browser timeouts to `/api/...`** — If the server picked a port other than 5050, use the URL **printed in the terminal** for both the page and the API (or add **`?api=http://127.0.0.1:<port>`** once if the HTML is opened from another origin). **`GET /health`** on that same host/port should return **`{"status":"ok"}`** after Mongo connects. If requests still go to the wrong port (e.g. stuck on **:5050**), clear site **localStorage** key **`mindtrack_api_base`** or run **`localStorage.removeItem("mindtrack_api_base")`** once in the browser console (a previous **`?api=`** visit may have saved it).
+- **Live Server / VS Code preview on another port** — The UI used to default API calls to **`127.0.0.1:5050`**. **`api.js`** probes **`/mindtrack-http-port`** (ports **5050–5059** and the same fallbacks as **`run.py`**) and saves **`mindtrack_api_base`** when it finds MindTrack. That endpoint returns the **port from your HTTP request**, so it stays correct even with **`uvicorn --reload`**. Probing targets **`127.0.0.1`** for IPv4 loopback. If the first try fails (e.g. the server was still starting), the next request probes again. You can still set **`window.MINDTRACK_DEV_API_PORT`**, **`<meta name="mindtrack-dev-api-port">`**, or **`?api=http://127.0.0.1:<port>`** (replace `<port>` with your API port) if needed.
 
 ## Using the app
 

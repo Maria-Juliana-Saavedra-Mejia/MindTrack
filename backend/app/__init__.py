@@ -41,7 +41,7 @@ def create_app():
     log = get_logger(__name__)
     log.setLevel(app.config.get("LOG_LEVEL", "INFO"))
 
-    client = MongoClient(app.config["MONGO_URI"])
+    client = MongoClient(app.config["MONGO_URI"], **Config.mongo_client_kwargs())
     db = client[app.config["MONGO_DB_NAME"]]
 
     db["users"].create_index("email", unique=True)

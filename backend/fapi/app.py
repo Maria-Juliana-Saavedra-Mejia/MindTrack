@@ -2,23 +2,97 @@
 """FastAPI application — API + static pages (replaces Flask for `python run.py`)."""
 
 import os
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import Config
 from app.services import AIService, AuthService, HabitService, LogService
+from app.utils.logger import get_logger
 from fapi.deps import register_bearer_error_handler
 from fapi.exception_handlers import register_domain_handlers
 from fapi.routers import ai, auth, habits, logs
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+_AGENT_DEBUG_NDJSON = os.path.join(_REPO_ROOT, "logs", "debug-1e99b1.log")
+
+_MONGO_SERVER_SELECTION_TIMEOUT_MS = 8000
+_AGENT_DEBUG_FIRST_BROWSER_LOGGED = False
+
+
+def _append_agent_debug_ndjson(
+    payload: dict, *, mirror_stderr: bool = False
+) -> None:
+    """Session debug log (NDJSON line). Writable path; avoids .cursor permission issues."""
+    try:
+        import json as _json_dbg
+        import sys as _sys_dbg
+        import time as _time_dbg
+
+        os.makedirs(os.path.dirname(_AGENT_DEBUG_NDJSON), exist_ok=True)
+        line = (
+            _json_dbg.dumps(
+                {**payload, "timestamp": int(_time_dbg.time() * 1000)}
+            )
+            + "\n"
+        )
+        with open(_AGENT_DEBUG_NDJSON, "a", encoding="utf-8") as _df:
+            _df.write(line)
+        if mirror_stderr:
+            _sys_dbg.stderr.write("MINDTRACK_AGENT_NDJSON " + line.rstrip() + "\n")
+    except Exception:
+        pass
+
+_INDEX_META_DEV_PORT_RE = re.compile(
+    r'(<meta\s+name="mindtrack-dev-api-port"\s+content=")([^"]*)(")',
+    re.IGNORECASE,
+)
+
+
+def _effective_listen_port(request: Request) -> int:
+    """Same resolution order as /mindtrack-http-port (int for HTML injection)."""
+    u = request.url
+    default_port = 443 if str(u.scheme).lower() == "https" else 80
+    if u.port is not None and u.port != default_port:
+        return int(u.port)
+    raw = os.environ.get("MINDTRACK_HTTP_PORT", "").strip()
+    if raw.isdigit():
+        return int(raw)
+    host_hdr = (request.headers.get("host") or "").strip()
+    if ":" in host_hdr:
+        tail = host_hdr.rsplit(":", 1)[-1]
+        if tail.isdigit():
+            return int(tail)
+    return 5050
+
+
+def _index_html_response(request: Request) -> HTMLResponse:
+    """
+    Serve index.html with mindtrack-dev-api-port filled from this request.
+
+    Ensures Live-Server-style flows that read the meta see the real listen port when
+    the page is opened via run.py (avoids stale empty meta + wrong default 5050).
+    """
+    path = os.path.join(_REPO_ROOT, "index.html")
+    with open(path, encoding="utf-8") as f:
+        html = f.read()
+    port = _effective_listen_port(request)
+
+    def _repl(m):
+        return f"{m.group(1)}{port}{m.group(3)}"
+
+    html_new, n = _INDEX_META_DEV_PORT_RE.subn(_repl, html, count=1)
+    if n == 0:
+        html_new = html
+    return HTMLResponse(content=html_new)
 
 
 @asynccontextmanager
@@ -26,37 +100,97 @@ async def lifespan(app: FastAPI):
     os.makedirs(os.path.join(os.getcwd(), "logs"), exist_ok=True)
     Config.validate()
     cfg = Config.to_flask_config()
-    client = MongoClient(cfg["MONGO_URI"])
-    db = client[cfg["MONGO_DB_NAME"]]
-    db["users"].create_index("email", unique=True)
-    db["habit_logs"].create_index(
-        [("user_id", 1), ("habit_id", 1), ("logged_at", -1)]
-    )
-    db["habits"].create_index([("user_id", 1), ("is_active", 1)])
-    habit_service = HabitService(db)
-    log_service = LogService(db, habit_service)
-    auth_service = AuthService(
-        db,
-        jwt_secret=cfg["JWT_SECRET"],
-        jwt_expiry_hours=cfg["JWT_EXPIRY_HOURS"],
-    )
-    ai_service = AIService(db, openai_api_key=cfg["OPENAI_API_KEY"])
-    app.state.mongo_client = client
-    app.state.db = db
-    app.state.jwt_secret = cfg["JWT_SECRET"]
-    app.state.habit_service = habit_service
-    app.state.log_service = log_service
-    app.state.auth_service = auth_service
-    app.state.ai_service = ai_service
+    log = get_logger(__name__)
+    client = None
+    try:
+        client = MongoClient(
+            cfg["MONGO_URI"],
+            serverSelectionTimeoutMS=_MONGO_SERVER_SELECTION_TIMEOUT_MS,
+            **Config.mongo_client_kwargs(),
+        )
+        db = client[cfg["MONGO_DB_NAME"]]
+        db["users"].create_index("email", unique=True)
+        db["habit_logs"].create_index(
+            [("user_id", 1), ("habit_id", 1), ("logged_at", -1)]
+        )
+        db["habits"].create_index([("user_id", 1), ("is_active", 1)])
+        habit_service = HabitService(db)
+        log_service = LogService(db, habit_service)
+        auth_service = AuthService(
+            db,
+            jwt_secret=cfg["JWT_SECRET"],
+            jwt_expiry_hours=cfg["JWT_EXPIRY_HOURS"],
+        )
+        ai_service = AIService(db, openai_api_key=cfg["OPENAI_API_KEY"])
+        app.state.mongo_client = client
+        app.state.db = db
+        app.state.jwt_secret = cfg["JWT_SECRET"]
+        app.state.habit_service = habit_service
+        app.state.log_service = log_service
+        app.state.auth_service = auth_service
+        app.state.ai_service = ai_service
+        log.info(
+            "MindTrack API ready (pid=%s) — file logs also written to logs/mindtrack.log "
+            "(project root, next to run.py).",
+            os.getpid(),
+        )
+    except (ServerSelectionTimeoutError, ConnectionFailure) as exc:
+        if client is not None:
+            client.close()
+        msg_l = str(exc).lower()
+        tls_hint = ""
+        if any(
+            s in msg_l
+            for s in ("certificate", "cert_verify", "ssl", "tls", "issuer")
+        ):
+            tls_hint = (
+                " TLS/certificate error: on macOS with python.org Python, open "
+                "Applications/Python 3.x and run “Install Certificates.command”. "
+                "MindTrack passes certifi’s CA bundle by default; ensure "
+                "`pip install -r requirements.txt` includes certifi. Dev-only "
+                "workaround: MONGO_TLS_INSECURE=1 in .env (never in production)."
+            )
+        raise RuntimeError(
+            "Cannot connect to MongoDB within "
+            f"{_MONGO_SERVER_SELECTION_TIMEOUT_MS // 1000}s. "
+            "Check MONGO_URI and MONGO_DB_NAME in .env (project root, next to run.py). "
+            "Start Mongo locally, use MongoDB Atlas, or run: docker compose up -d."
+            + tls_hint
+        ) from exc
     try:
         yield
     finally:
-        client.close()
+        if client is not None:
+            client.close()
 
 
 def build_app() -> FastAPI:
     app = FastAPI(title="MindTrack", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, **Config.fastapi_cors_middleware_options())
+
+    @app.middleware("http")
+    async def _agent_debug_first_request(request: Request, call_next):
+        global _AGENT_DEBUG_FIRST_BROWSER_LOGGED
+        # #region agent log
+        cli = request.client.host if request.client else None
+        if cli != "testclient" and not _AGENT_DEBUG_FIRST_BROWSER_LOGGED:
+            _append_agent_debug_ndjson(
+                {
+                    "sessionId": "1e99b1",
+                    "hypothesisId": "H5",
+                    "location": "fapi/app.py:middleware",
+                    "message": "first_http_request",
+                    "data": {
+                        "path": request.url.path,
+                        "client": cli,
+                    },
+                },
+                mirror_stderr=True,
+            )
+            _AGENT_DEBUG_FIRST_BROWSER_LOGGED = True
+        # #endregion
+        return await call_next(request)
+
     register_bearer_error_handler(app)
     register_domain_handlers(app)
 
@@ -77,17 +211,55 @@ def build_app() -> FastAPI:
     def health():
         return {"status": "ok"}
 
+    @app.post("/.__mindtrack/debug-log")
+    async def _mindtrack_agent_debug_log(request: Request):
+        """Dev-only NDJSON sink when Cursor ingest (:7609) is unreachable from the browser."""
+        if os.getenv("FLASK_ENV", "development").lower() != "development":
+            return PlainTextResponse("not found", status_code=404)
+        raw = await request.body()
+        if len(raw) > 8192:
+            raw = raw[:8192]
+        try:
+            os.makedirs(os.path.dirname(_AGENT_DEBUG_NDJSON), exist_ok=True)
+            with open(_AGENT_DEBUG_NDJSON, "ab") as _df:
+                _df.write(raw.strip() + b"\n")
+        except Exception:
+            pass
+        return PlainTextResponse("ok")
+
+    @app.get("/mindtrack-http-port")
+    def mindtrack_http_port(request: Request):
+        """
+        Plain-text listen port for local dev (Live Server + api.js cross-port probe).
+
+        Prefer the port from this HTTP request URL — survives uvicorn --reload subprocesses
+        where MINDTRACK_HTTP_PORT may not match the worker.
+        """
+        u = request.url
+        default_port = 443 if str(u.scheme).lower() == "https" else 80
+        if u.port is not None and u.port != default_port:
+            return PlainTextResponse(str(u.port))
+        raw = os.environ.get("MINDTRACK_HTTP_PORT", "").strip()
+        if raw.isdigit():
+            return PlainTextResponse(raw)
+        host_hdr = (request.headers.get("host") or "").strip()
+        if ":" in host_hdr:
+            tail = host_hdr.rsplit(":", 1)[-1]
+            if tail.isdigit():
+                return PlainTextResponse(tail)
+        return PlainTextResponse("5050")
+
     @app.get("/")
-    def home():
-        return FileResponse(os.path.join(_REPO_ROOT, "index.html"))
+    def home(request: Request):
+        return _index_html_response(request)
 
     @app.get("/index.html")
-    def index_html():
-        return FileResponse(os.path.join(_REPO_ROOT, "index.html"))
+    def index_html(request: Request):
+        return _index_html_response(request)
 
     @app.get("/login")
-    def login_page():
-        return FileResponse(os.path.join(_REPO_ROOT, "index.html"))
+    def login_page(request: Request):
+        return _index_html_response(request)
 
     @app.get("/dashboard")
     def dashboard_page(request: Request):

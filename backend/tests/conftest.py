@@ -3,10 +3,19 @@
 
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from bson import ObjectId
+
+# Repo-root .env loads before defaults so pytest matches `python run.py` for Mongo settings.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+except ImportError:
+    pass
 
 os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017")
 os.environ.setdefault("MONGO_DB_NAME", "mindtrack_test")

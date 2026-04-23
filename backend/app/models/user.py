@@ -42,6 +42,8 @@ class User:
     @classmethod
     def from_dict(cls, data):
         """Hydrate a User instance from a Mongo document."""
+        # `password` is the canonical field (plain text in this project). `password_hash`
+        # is only an alternate key for legacy imports; the value is still compared as plain text.
         return cls(
             full_name=data.get("full_name", ""),
             email=data.get("email", ""),

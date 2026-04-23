@@ -30,7 +30,10 @@ function validateEmail(email) {
  * Remote API: dashboard is on the API host. localStorage does not cross origins,
  * so we pass the session in the hash once; api.js stores it and strips the hash.
  */
-function redirectAfterAuth(data) {
+async function redirectAfterAuth(data) {
+  if (typeof _maybeProbeMindtrackListenPort === "function") {
+    await _maybeProbeMindtrackListenPort();
+  }
   const api =
     typeof getApiBase === "function" ? getApiBase() : "";
   if (api) {
@@ -67,7 +70,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     const data = await apiFetch("/api/auth/login", "POST", { email, password });
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("mindtrack_user", JSON.stringify(data.user));
-    redirectAfterAuth(data);
+    await redirectAfterAuth(data);
   } catch (err) {
     showError("login-password-error", err.message);
   }
@@ -116,7 +119,7 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
     });
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("mindtrack_user", JSON.stringify(data.user));
-    redirectAfterAuth(data);
+    await redirectAfterAuth(data);
   } catch (err) {
     showError("reg-email-error", err.message);
   }

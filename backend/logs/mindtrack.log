@@ -358,3 +358,5 @@ app.utils.error_handlers.UserAlreadyExistsError: Email already registered
 [2026-04-22 15:24:38] [INFO] [app.routes.logs] Created log 69e92e86b694528009a12e49
 [2026-04-22 15:24:38] [INFO] [app.routes.logs] Fetched 0 logs for user 69e92e86b694528009a12e4a
 [2026-04-22 15:24:38] [INFO] [app.routes.logs] Streak for habit 69e92e86b694528009a12e4c: 0
+[2026-04-23 10:59:32] [INFO] [fapi.app] MindTrack API ready — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 10:59:32] [INFO] [fapi.routers.auth] Login attempt for a@b.com
