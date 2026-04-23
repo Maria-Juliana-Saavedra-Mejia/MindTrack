@@ -12,7 +12,7 @@
     -->
     <meta name="mindtrack-base-path" content="" />
     <meta name="mindtrack-api-base" content="" />
-    <!-- If you use Live Server (or another port) but python run.py listens on e.g. 5051, set the API port here or use window.MINDTRACK_DEV_API_PORT below (must match the port printed in the terminal). -->
+    <!-- Live Server + API on another port: set the API port here (e.g. 8000 for uvicorn) or use window.MINDTRACK_DEV_API_PORT. If you use python3 run.py, use the port printed in the terminal (often 5050–5059). -->
     <meta name="mindtrack-dev-api-port" content="" />
     <link rel="icon" type="image/svg+xml" href="frontend/static/favicon.svg" />
     <title>MindTrack — Login</title>
@@ -20,12 +20,13 @@
       window.MINDTRACK_DEFAULT_API = "";
       /*
         Easiest: open only the URL printed by `python3 run.py` (same port for UI + API).
-        Live Server (e.g. :5500): run `python3 run.py`, note PORT in the terminal, then either:
-          • Add once to the address bar: ?mt_api_port=PORT   (e.g. ?mt_api_port=5051)
+        Live Server (e.g. :5500) with API elsewhere:
+          • Default API base port in api.js is 8000 (typical uvicorn). For `python3 run.py`, pin the terminal port:
+          • ?mt_api_port=PORT   (e.g. ?mt_api_port=5051 or ?mt_api_port=8000)
           • Or full URL: ?api=http://127.0.0.1:PORT
           • Or set meta mindtrack-dev-api-port above, or uncomment:
       */
-      // window.MINDTRACK_DEV_API_PORT = "5051";
+      // window.MINDTRACK_DEV_API_PORT = "8000";
     </script>
     <script>
       (function () {

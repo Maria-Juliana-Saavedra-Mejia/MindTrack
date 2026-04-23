@@ -27,9 +27,27 @@ Edit `.env` and set only these two values:
 
 The database is **MongoDB** (not Mongoose—that is a Node.js ODM). You can browse the same cluster and database in **[MongoDB Compass](https://www.mongodb.com/products/compass)** using your **`MONGO_URI`** (and select **`MONGO_DB_NAME`** in the sidebar) to verify documents (`users`, `habits`, `habit_logs`, etc.) while the app or tests run.
 
-### Passwords (demo / coursework)
+### Passwords
 
-User passwords are stored in MongoDB **as plain text** and compared with string equality on login (**no bcrypt** in this codebase). That keeps the project simple for local development and coursework; a real production service must use password hashing and other hardening.
+New accounts store **bcrypt** hashes in **`password_hash`**. Older demo documents may still use plain **`password`**; login accepts both until migrated.
+
+### Local deploy (like a one-machine production preview)
+
+Use this when you want **Mongo + API + login page** on your laptop with one flow:
+
+1. **Install** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or run Mongo another way and set **`MONGO_URI`** in **`.env`**).
+2. From the repo root:
+
+   ```bash
+   chmod +x scripts/local_deploy.sh   # once
+   ./scripts/local_deploy.sh
+   ```
+
+   The script copies **`.env.example` → `.env`** if missing, runs **`docker compose up -d`** for local Mongo (**`mongodb://localhost:27017`**), creates **`.venv`**, installs **`requirements.txt`**, then starts **`python run.py`**.
+
+3. Open the URL printed in the terminal (e.g. **`http://127.0.0.1:5050/`**). **`GET /health`** should return **`{"status":"ok"}`** once Mongo is reachable.
+
+To use **MongoDB Atlas** instead: put your **`mongodb+srv://...`** URI in **`.env`**. You can skip Docker and run **`source .venv/bin/activate && python run.py`** after **`pip install -r requirements.txt`**. If you still run **`local_deploy.sh`**, it starts local Mongo too — harmless, but you can comment out the **`docker compose`** lines in the script if you prefer only Atlas.
 
 ### Optional: integration tests (real MongoDB)
 
@@ -91,20 +109,23 @@ Example (replace `PORT` with the number from the terminal): `http://127.0.0.1:PO
 ```
 MindTrack/
 ├── index.html               # Static entry; also served at http://.../index.html
+├── scripts/
+│   └── local_deploy.sh      # Optional: Docker Mongo + venv + run.py
 ├── backend/
-│   ├── app/                 # Flask package (config, models, routes, services, utils)
+│   ├── app/                 # Config, models, services, utils
+│   ├── fapi/                # FastAPI app + `/api/...` routers
 │   └── tests/               # pytest suite
 ├── frontend/
 │   ├── static/              # CSS and JavaScript (served at /static/...)
 │   └── templates/           # Jinja pages (dashboard, habits, log)
 ├── .github/workflows/       # CI (flake8 + pytest + coverage)
-├── run.py                   # Entry point (adds backend/ to Python path)
+├── run.py                   # FastAPI + Uvicorn entry (adds backend/ to Python path)
 ├── requirements.txt
 ├── .env                     # You create this (gitignored); see "Where is .env" above
 └── .env.example             # Mongo URI + database name only
 ```
 
-The Flask server serves the REST API under `/api/...` and dashboard pages from **`frontend/templates/`**. The **entry/login experience** lives only in the repo-root **`index.html`**. Static assets (CSS/JS) are under **`frontend/static/`** and are exposed at **`/static/...`** URLs.
+The **`run.py`** stack (FastAPI in **`backend/fapi/`**) serves the REST API under **`/api/...`**, dashboard pages from **`frontend/templates/`**, and OpenAPI docs at **`/docs`**. The **entry/login experience** lives only in the repo-root **`index.html`**. Static assets (CSS/JS) are under **`frontend/static/`** and are exposed at **`/static/...`** URLs.
 
 ## MongoDB data model (expected collections)
 
@@ -115,19 +136,21 @@ The app uses the database named in `MONGO_DB_NAME`. Collections are created on f
 - `_id` (ObjectId)
 - `full_name` (string)
 - `email` (string, unique index)
-- `password` (string, stored as plain text for this demo; not suitable for production)
+- `password_hash` (string, **bcrypt** hash for new registrations)
 - `created_at` (datetime)
 - `last_login` (datetime or null)
 - `preferences` (object): `reminder_time` (string), `theme` (string)
 
-Example `users` document (field `password` is what the app writes; `password_hash` is still read for older or external examples, but the value is compared as plain text in this project):
+Legacy documents may still have **`password`** (plain); login supports both until migrated.
+
+Example `users` document (new registrations):
 
 ```json
 {
   "_id": { "$oid": "661f1a1a1a1a1a1a1a1a1a01" },
   "email": "juan.rojas@example.com",
   "full_name": "Juan Rojas",
-  "password": "mySecretPass123",
+  "password_hash": "$2b$12$…",
   "created_at": { "$date": "2026-04-20T10:00:00.000Z" },
   "last_login": { "$date": "2026-04-21T09:00:00.000Z" },
   "preferences": { "reminder_time": "08:00", "theme": "light" }

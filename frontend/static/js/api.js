@@ -35,6 +35,10 @@
   }
 })();
 
+/** Fixed local API base when not using explicit meta/window/?api overrides (no port probing).
+ * Backend may listen as 0.0.0.0:5052 — browsers must use http://127.0.0.1:5052 (not http://0.0.0.0/…). */
+const MINDTRACK_FIXED_LOCAL_API_BASE = "http://127.0.0.1:5052";
+
 /**
  * API base (no trailing slash), first match wins:
  * - window.MINDTRACK_API_BASE, then MINDTRACK_DEFAULT_API, then meta mindtrack-api-base
@@ -42,8 +46,8 @@
  * - ?api=https://host (saved to localStorage unless stale vs unified port 5050–5059; query stripped from bar)
  * - ?mt_api_port=5051 on loopback — shorthand for ?api=http://127.0.0.1:5051 (Live Server + run.py)
  * - localStorage mindtrack_api_base (ignored if stale: another 5050–5059 slot than the current page)
- * - Local dev on loopback, page on a *different* port than the API (e.g. Live Server) -> same host + MINDTRACK_DEV_API_PORT, or meta mindtrack-dev-api-port, or 5050. If the page is already on 5050–5059 (run.py’s range), same origin is used so 5051 when 5050 is busy still works.
-   *   macOS AirPlay Receiver often binds :5000 — we default to 5050 to avoid it; override with MINDTRACK_DEV_API_PORT if you use another API port.
+ * - Local dev on loopback with another port (e.g. Live Server) -> MINDTRACK_FIXED_LOCAL_API_BASE.
+ *   If the page is already on the same origin as that base (run.py on 5052, etc.), relative /api calls are used.
  * Deploy: set meta or MINDTRACK_DEFAULT_API to your deployed API; ensure CORS_ORIGINS on the server
  * includes your static site's origin (see backend app config / env).
  */
@@ -437,52 +441,34 @@ function getApiBase() {
   const p = String(window.location.port || "");
   const isLoopback =
     h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "0.0.0.0";
-  let devApiPort = "5050";
-  try {
-    const metaDev = document.querySelector(
-      'meta[name="mindtrack-dev-api-port"]'
-    );
-    const mc = metaDev && metaDev.getAttribute("content");
-    if (mc && String(mc).trim()) {
-      const t = String(mc).trim();
-      if (/^\d+$/.test(t)) {
-        devApiPort = t;
-      }
-    }
-  } catch (e) {
-    /* */
-  }
-  try {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.MINDTRACK_DEV_API_PORT === "string" &&
-      window.MINDTRACK_DEV_API_PORT.trim()
-    ) {
-      devApiPort = window.MINDTRACK_DEV_API_PORT.trim();
-    }
-  } catch (e) {
-    /* */
-  }
-  /* run.py binds API+UI on the first free port in 5050–5059. If 5050 is busy and you open
-   * http://127.0.0.1:5051/, do not rewrite the API to :5050 (wrong port — timeouts).
-   * Redirect to devApiPort only when the page is on another dev server (e.g. Live Server).
-   * devApiPort: window.MINDTRACK_DEV_API_PORT > meta mindtrack-dev-api-port > default 5050. */
+  const fixed = MINDTRACK_FIXED_LOCAL_API_BASE;
   const pagePortNum = parseInt(p, 10);
   const onMindtrackUnifiedPort =
     p !== "" &&
     !Number.isNaN(pagePortNum) &&
     pagePortNum >= 5050 &&
     pagePortNum <= 5059;
-  if (
-    isLoopback &&
-    p &&
-    !onMindtrackUnifiedPort &&
-    p !== devApiPort
-  ) {
-    return _finalizeMindtrackApiBase(
-      window.location.protocol + "//" + h + ":" + devApiPort,
-      false
-    );
+  /* UI served from python run.py on 5050–5059 — same origin as that server. */
+  if (isLoopback && onMindtrackUnifiedPort) {
+    return "";
+  }
+  /* Same origin as fixed API (e.g. http://127.0.0.1:5052 — also when hostname is 0.0.0.0). */
+  if (isLoopback && p) {
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.location &&
+        window.location.origin === new URL(fixed).origin
+      ) {
+        return "";
+      }
+    } catch (e) {
+      /* */
+    }
+  }
+  /* Live Server / other loopback port — call API at fixed base (no port scan). */
+  if (isLoopback && p) {
+    return _finalizeMindtrackApiBase(fixed, false);
   }
   return "";
 }
@@ -504,18 +490,26 @@ function apiUrl(path) {
   }
   const p = path.startsWith("/") ? path : `/${path}`;
   const base = getApiBase();
-  return base ? `${base}${p}` : p;
+  if (base) {
+    return `${base}${p}`;
+  }
+  /* Do not fetch against http://0.0.0.0 — use 127.0.0.1 (same machine, reliable in browsers). */
+  if (
+    typeof window !== "undefined" &&
+    window.location &&
+    window.location.hostname === "0.0.0.0"
+  ) {
+    const proto = window.location.protocol;
+    const port = window.location.port;
+    return `${proto}//127.0.0.1${port ? ":" + port : ""}${p}`;
+  }
+  return p;
 }
 
 function _staticSiteNeedsExplicitApi() {
   const h = (window.location && window.location.hostname) || "";
   return h.endsWith(".github.io") || h === "github.io";
 }
-
-let _mindtrackPortProbePromise = null;
-let _mindtrackPortProbeSucceeded = false;
-/** True after a full cross-port probe finished with no responding MindTrack (see logs H1). */
-let _mindtrackProbeExhaustedNoMatch = false;
 
 /** Brackets IPv6 literals for URL strings (fetch / localStorage base). */
 function _httpLoopbackHostForFetch(hostname) {
@@ -543,218 +537,13 @@ function _canonicalLoopbackProbeHost(hostname) {
   return hostname;
 }
 
-/** User pinned API via HTML/URL/storage — do not block on failed port scan. */
-function _hasExplicitMindtrackApiHint() {
-  try {
-    const ph =
-      typeof window !== "undefined" && window.location
-        ? window.location.hostname
-        : "";
-    const pp =
-      typeof window !== "undefined" && window.location
-        ? String(window.location.port || "")
-        : "";
-    if (
-      typeof window !== "undefined" &&
-      typeof window.MINDTRACK_API_BASE === "string" &&
-      window.MINDTRACK_API_BASE.trim()
-    ) {
-      return true;
-    }
-    if (
-      typeof window !== "undefined" &&
-      typeof window.MINDTRACK_DEFAULT_API === "string" &&
-      window.MINDTRACK_DEFAULT_API.trim()
-    ) {
-      return true;
-    }
-    if (
-      typeof window !== "undefined" &&
-      typeof window.MINDTRACK_DEV_API_PORT === "string" &&
-      window.MINDTRACK_DEV_API_PORT.trim()
-    ) {
-      return true;
-    }
-    const mb = document.querySelector('meta[name="mindtrack-api-base"]');
-    if (mb && mb.getAttribute("content") && String(mb.getAttribute("content")).trim()) {
-      return true;
-    }
-    const md = document.querySelector('meta[name="mindtrack-dev-api-port"]');
-    if (md && md.getAttribute("content") && String(md.getAttribute("content")).trim()) {
-      return true;
-    }
-    const sp = new URLSearchParams(window.location.search || "");
-    if (sp.get("api") && String(sp.get("api")).trim()) {
-      return true;
-    }
-    if (sp.get("mt_api_port") && String(sp.get("mt_api_port")).trim()) {
-      return true;
-    }
-    /* Do not treat stale mindtrack_api_base as “user intent” (same rules as getApiBase). */
-    if (typeof localStorage !== "undefined") {
-      const raw = localStorage.getItem("mindtrack_api_base");
-      const norm = _normalizeApiBase(raw);
-      if (
-        raw &&
-        norm &&
-        !_isStaleStoredMindtrackApiBase(norm, ph, pp)
-      ) {
-        return true;
-      }
-    }
-  } catch (e) {
-    /* */
-  }
-  return false;
-}
-
-/** Live Server / preview on loopback with a non-unified port: probe where MindTrack listens. */
-function _needsMindtrackListenPortProbe() {
-  try {
-    const h = window.location.hostname;
-    const isLoopback =
-      h === "localhost" ||
-      h === "127.0.0.1" ||
-      h === "[::1]" ||
-      h === "0.0.0.0";
-    if (!isLoopback) {
-      return false;
-    }
-    const p = String(window.location.port || "");
-    if (!p) {
-      return false;
-    }
-    const pagePn = parseInt(p, 10);
-    if (
-      !Number.isNaN(pagePn) &&
-      pagePn >= 5050 &&
-      pagePn <= 5059
-    ) {
-      return false;
-    }
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
+/** Port probing removed — fixed API base in getApiBase (kept as no-op for callers). */
 function _maybeProbeMindtrackListenPort() {
-  if (_mindtrackPortProbeSucceeded) {
-    return Promise.resolve();
-  }
-  if (_mindtrackPortProbePromise !== null) {
-    return _mindtrackPortProbePromise;
-  }
-  if (!_needsMindtrackListenPortProbe()) {
-    _mindtrackPortProbePromise = Promise.resolve();
-    return _mindtrackPortProbePromise;
-  }
-  try {
-    const rawLs = localStorage.getItem("mindtrack_api_base");
-    const normLs = _normalizeApiBase(rawLs);
-    if (normLs && _isLoopbackUrlInPrimaryUnifiedRange(normLs)) {
-      localStorage.removeItem("mindtrack_api_base");
-    }
-  } catch (e) {
-    /* */
-  }
-  const probeHost = _canonicalLoopbackProbeHost(window.location.hostname);
-  const hostFetch = _httpLoopbackHostForFetch(probeHost);
-  const ports = [];
-  let i;
-  for (i = 5050; i <= 5059; i += 1) {
-    ports.push(i);
-  }
-  [8080, 8443, 8888, 3000, 8000].forEach(function (x) {
-    ports.push(x);
-  });
-  _mindtrackPortProbePromise = new Promise(function (resolve) {
-    _mindtrackProbeExhaustedNoMatch = false;
-    let settled = false;
-    let foundPort = false;
-    let pending = ports.length;
-
-    function finish() {
-      if (!settled) {
-        settled = true;
-        resolve();
-      }
-      /* Failed discovery: allow a later apiFetch to probe again (slow server start). */
-      if (!foundPort) {
-        _mindtrackPortProbePromise = null;
-      }
-    }
-
-    function tryPort(port) {
-      const c = new AbortController();
-      const t = setTimeout(function () {
-        c.abort();
-      }, 1200);
-      fetch(
-        "http://" + hostFetch + ":" + port + "/mindtrack-http-port",
-        {
-          method: "GET",
-          cache: "no-store",
-          signal: c.signal,
-        }
-      )
-        .then(function (r) {
-          if (!r.ok) {
-            throw new Error("bad");
-          }
-          return r.text();
-        })
-        .then(function (text) {
-          const n = parseInt(String(text).trim(), 10);
-          if (Number.isNaN(n)) {
-            throw new Error("nan");
-          }
-          foundPort = true;
-          _mindtrackPortProbeSucceeded = true;
-          try {
-            localStorage.setItem(
-              "mindtrack_api_base",
-              "http://" + hostFetch + ":" + n
-            );
-          } catch (e) {
-            /* */
-          }
-          finish();
-        })
-        .catch(function () {
-          /* */
-        })
-        .finally(function () {
-          clearTimeout(t);
-          pending -= 1;
-          if (pending <= 0) {
-            if (!foundPort) {
-              _mindtrackProbeExhaustedNoMatch = true;
-            }
-            finish();
-          }
-        });
-    }
-
-    ports.forEach(tryPort);
-  });
-  return _mindtrackPortProbePromise;
+  return Promise.resolve();
 }
 
 async function apiFetch(endpoint, method = "GET", body = null) {
   await _maybeProbeMindtrackListenPort();
-  if (
-    _needsMindtrackListenPortProbe() &&
-    !_mindtrackPortProbeSucceeded &&
-    _mindtrackProbeExhaustedNoMatch &&
-    !_hasExplicitMindtrackApiHint()
-  ) {
-    throw new Error(
-      "MindTrack API was not found on this machine (port scan finished with no response). " +
-        "Start the backend from the project folder: python3 run.py — then open the URL it prints in the terminal, " +
-        "or add once to this page's address bar: ?api=http://127.0.0.1:PORT (use the PORT shown, e.g. 5050 or 5051)."
-    );
-  }
   if (
     !String(endpoint).startsWith("http") &&
     _staticSiteNeedsExplicitApi() &&
@@ -812,20 +601,39 @@ async function apiFetch(endpoint, method = "GET", body = null) {
       cause: err && err.cause,
       hintIfPort5000MacOS:
         String(url).indexOf(":5000") >= 0
-          ? "macOS often serves AirPlay on :5000 (not your API). Default is :5050; if you use PORT=5000, disable AirPlay or set window.MINDTRACK_DEV_API_PORT = \"5000\" before api.js."
+          ? "macOS often serves AirPlay on :5000 (not your API). Expected API: " +
+            MINDTRACK_FIXED_LOCAL_API_BASE +
+            "."
           : undefined,
     });
     const health = String(url).replace(/\/api\/.*$/, "/health");
     throw new Error(
-      "Could not reach the API: " + url + ". 1) Run the backend: python run.py. " +
-        "2) In the browser open " + health + " (same host/port as the API; use the port run.py printed, e.g. 5050 or 5051). " +
-        "3) Scheme mismatch: an https:// page cannot fetch an http:// API (mixed content — the browser blocks it). " +
-        "Fix: open the UI over http:// (e.g. the URL from run.py), or terminate TLS in front of the API and use https for both. " +
-        "(On an http:// page, a saved https:// API on loopback :5050–5059 is rewritten to http:// automatically.)",
+      "Could not reach the API: " + url + ". 1) Start FastAPI at " + MINDTRACK_FIXED_LOCAL_API_BASE + " (e.g. uvicorn). " +
+        "2) Open " + health + " in the browser. " +
+        "3) Mixed content: an https:// page cannot fetch an http:// API — open the UI over http:// or use HTTPS for both. " +
+        "(On an http:// page, a saved https:// API on loopback :5050–5059 may be rewritten to http:// automatically.)",
       { cause: err }
     );
   }
-  const data = await response.json().catch(() => ({}));
+  const ct = (response.headers.get("content-type") || "").toLowerCase();
+  const rawBody = await response.text();
+  let data = {};
+  if (rawBody) {
+    const trim = rawBody.trim();
+    const looksJson =
+      ct.includes("application/json") ||
+      ct.includes("+json") ||
+      /^[\[{]/.test(trim);
+    if (looksJson) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch (e) {
+        data = {};
+      }
+    } else if (!response.ok) {
+      data = { message: trim.slice(0, 500) };
+    }
+  }
   let errText = data.message;
   if (!errText && data.detail != null) {
     if (typeof data.detail === "string") {
@@ -849,7 +657,8 @@ async function apiFetch(endpoint, method = "GET", body = null) {
     );
   }
   if (!response.ok) {
-    throw new Error(errText || "Request failed");
+    const suffix = response.status ? " (" + response.status + ")" : "";
+    throw new Error((errText || "Request failed") + suffix);
   }
   return data;
 }

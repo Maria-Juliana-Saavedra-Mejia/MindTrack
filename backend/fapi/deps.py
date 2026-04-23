@@ -26,7 +26,7 @@ def get_jwt_sub(
     request: Request,
     cred: Annotated[Optional[HTTPAuthorizationCredentials], Depends(bearer)],
 ) -> str:
-    """Return Mongo user id from valid Bearer token (same as Flask g.user_id)."""
+    """Return Mongo user id from valid Bearer token."""
     if cred is None or not cred.credentials or cred.scheme.lower() != "bearer":
         raise _JSONError("Missing or invalid Authorization header", 401)
     try:

@@ -96,39 +96,6 @@ class Config:
             "allow_headers": ["*"],
         }
 
-    @classmethod
-    def flask_cors_api_resources(cls):
-        """
-        `resources` dict for flask_cors CORS() on /api/.* when using the Flask app factory
-        (same CORS_ORIGINS / production rules as fastapi_cors_middleware_options).
-        """
-        raw = os.getenv("CORS_ORIGINS", "").strip()
-        if raw:
-            o = [x.strip() for x in raw.split(",") if x.strip()]
-        elif cls._runtime_env_name() == "production":
-            o = []
-        else:
-            o = "*"
-        return {
-            r"/api/.*": {
-                "origins": o,
-                "methods": [
-                    "GET",
-                    "HEAD",
-                    "OPTIONS",
-                    "POST",
-                    "PUT",
-                    "PATCH",
-                    "DELETE",
-                ],
-                "allow_headers": [
-                    "Content-Type",
-                    "Authorization",
-                    "X-Requested-With",
-                ],
-            }
-        }
-
     @staticmethod
     def mongo_client_kwargs():
         """
@@ -168,8 +135,8 @@ class Config:
             )
 
     @classmethod
-    def to_flask_config(cls):
-        """Map to Flask config keys."""
+    def to_app_config(cls):
+        """Merged settings dict (Mongo, JWT, OpenAI, log level) after validation."""
         cls.validate()
         return {
             "MONGO_URI": cls._mongo_uri(),

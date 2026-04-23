@@ -64,11 +64,13 @@ def log_service(mock_db, habit_service):
 
 @pytest.fixture
 def sample_user_dict():
+    from app.utils.passwords import hash_password
+
     return {
         "_id": ObjectId(),
         "full_name": "Test User",
         "email": "user@example.com",
-        "password": "goodpassword",
+        "password_hash": hash_password("goodpassword"),
         "preferences": {"reminder_time": "09:00", "theme": "light"},
         "created_at": datetime.now(timezone.utc),
         "last_login": None,

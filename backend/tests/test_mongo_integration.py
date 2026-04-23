@@ -38,7 +38,7 @@ def mongo_bundle():
     db_name = f"mindtrack_int_{uuid.uuid4().hex[:12]}"
     os.environ["MONGO_DB_NAME"] = db_name
     Config.validate()
-    cfg = Config.to_flask_config()
+    cfg = Config.to_app_config()
     client = MongoClient(
         cfg["MONGO_URI"],
         serverSelectionTimeoutMS=5000,
@@ -88,8 +88,10 @@ def mongo_bundle():
             os.environ["MONGO_DB_NAME"] = saved_name
 
 
-def test_password_stored_and_read_as_plain_text(mongo_bundle):
-    """Password field in Mongo matches submitted string (no hashing)."""
+def test_password_stored_as_bcrypt_hash(mongo_bundle):
+    """Registered users have bcrypt in ``password_hash`` only (no plain ``password``)."""
+    import bcrypt
+
     auth = mongo_bundle["auth"]
     db = mongo_bundle["db"]
     plain = "student_plain_pw_123"
@@ -99,7 +101,10 @@ def test_password_stored_and_read_as_plain_text(mongo_bundle):
     )
     doc = db["users"].find_one({"email": email})
     assert doc is not None
-    assert doc.get("password") == plain
+    assert doc.get("password") is None
+    stored = doc.get("password_hash")
+    assert stored and str(stored).startswith("$2")
+    assert bcrypt.checkpw(plain.encode("utf-8"), stored.encode("ascii"))
 
 
 def test_login_last_login_token_and_habit_log_roundtrip(mongo_bundle):

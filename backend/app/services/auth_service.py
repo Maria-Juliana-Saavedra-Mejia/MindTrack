@@ -1,13 +1,16 @@
 # app/services/auth_service.py
 """Authentication and user lookup."""
 
+import time
 from datetime import datetime, timedelta, timezone
 
 import jwt
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
 
 from app.models.user import User
 from app.utils.error_handlers import InvalidCredentialsError, UserAlreadyExistsError
+from app.utils.passwords import hash_password
 
 
 class AuthService:
@@ -28,18 +31,36 @@ class AuthService:
         if self._users.find_one({"email": email}):
             raise UserAlreadyExistsError("Email already registered")
         user = User(full_name=full_name, email=email, password=password)
-        doc = user.to_dict(include_password=True)
+        doc = user.to_dict(include_password=False)
         doc["email"] = user.email
         doc["full_name"] = user.full_name
-        result = self._users.insert_one(doc)
+        doc["password_hash"] = hash_password(password)
+        try:
+            result = self._users.insert_one(doc)
+        except DuplicateKeyError:
+            raise UserAlreadyExistsError("Email already registered") from None
         created = self._users.find_one({"_id": result.inserted_id})
+        if created is None:
+            # Insert acknowledged but read not yet visible (e.g. replica lag).
+            created = {**doc, "_id": result.inserted_id}
         return self._serialize_user(created)
 
-    def login_user(self, email, password):
-        """Authenticate user and return token payload."""
+    def login_user(self, email, password, *, _post_register_retries=0):
+        """Authenticate user and return token payload.
+
+        _post_register_retries: brief find retries after register (Mongo read visibility).
+        """
         if not email or not password:
             raise InvalidCredentialsError("Invalid email or password")
-        doc = self._users.find_one({"email": email.strip().lower()})
+        normalized = email.strip().lower()
+        doc = None
+        attempts = max(1, 1 + int(_post_register_retries))
+        for attempt in range(attempts):
+            doc = self._users.find_one({"email": normalized})
+            if doc is not None:
+                break
+            if attempt + 1 < attempts:
+                time.sleep(0.05 * (attempt + 1))
         if not doc:
             raise InvalidCredentialsError("Invalid email or password")
         user = User.from_dict(doc)
@@ -61,23 +82,35 @@ class AuthService:
         return self._serialize_user(doc)
 
     def _issue_token(self, user_id: str):
-        exp = datetime.now(timezone.utc) + timedelta(hours=self._jwt_expiry_hours)
-        payload = {"sub": user_id, "exp": exp}
-        return jwt.encode(payload, self._jwt_secret, algorithm="HS256")
+        exp_ts = int(
+            (
+                datetime.now(timezone.utc)
+                + timedelta(hours=self._jwt_expiry_hours)
+            ).timestamp()
+        )
+        payload = {"sub": user_id, "exp": exp_ts}
+        token = jwt.encode(payload, self._jwt_secret, algorithm="HS256")
+        return token.decode("utf-8") if isinstance(token, bytes) else str(token)
 
     @staticmethod
     def _serialize_user(doc):
+        def _iso(v):
+            if v is None:
+                return None
+            if hasattr(v, "isoformat"):
+                try:
+                    return v.isoformat()
+                except (TypeError, ValueError):
+                    return str(v)
+            return str(v)
+
         return {
             "id": str(doc["_id"]),
             "full_name": doc.get("full_name"),
             "email": doc.get("email"),
             "preferences": doc.get("preferences", {}),
-            "created_at": doc.get("created_at").isoformat()
-            if doc.get("created_at")
-            else None,
-            "last_login": doc.get("last_login").isoformat()
-            if doc.get("last_login")
-            else None,
+            "created_at": _iso(doc.get("created_at")),
+            "last_login": _iso(doc.get("last_login")),
         }
 
     @staticmethod

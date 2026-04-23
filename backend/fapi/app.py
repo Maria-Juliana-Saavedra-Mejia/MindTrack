@@ -1,5 +1,5 @@
 # fapi/app.py
-"""FastAPI application — API + static pages (replaces Flask for `python run.py`)."""
+"""FastAPI application — API + static pages (`python run.py`)."""
 
 import os
 import re
@@ -73,7 +73,7 @@ def _index_html_response(request: Request) -> HTMLResponse:
 async def lifespan(app: FastAPI):
     os.makedirs(os.path.join(os.getcwd(), "logs"), exist_ok=True)
     Config.validate()
-    cfg = Config.to_flask_config()
+    cfg = Config.to_app_config()
     log = get_logger(__name__)
     client = None
     try:
@@ -220,7 +220,7 @@ def build_app() -> FastAPI:
         StaticFiles(directory=_front),
         name="frontstatic",
     )
-    # Same files as legacy Flask `static_url_path` (see test_static_login_css)
+    # Same files as `/static` mount (see test_static_login_css)
     app.mount(
         "/static",
         StaticFiles(directory=_front),

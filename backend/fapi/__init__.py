@@ -1,1 +1,1 @@
-# fapi — FastAPI application for MindTrack (replaces Flask for run.py)
+# fapi — FastAPI application for MindTrack (used by run.py)

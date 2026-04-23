@@ -360,3 +360,241 @@ app.utils.error_handlers.UserAlreadyExistsError: Email already registered
 [2026-04-22 15:24:38] [INFO] [app.routes.logs] Streak for habit 69e92e86b694528009a12e4c: 0
 [2026-04-23 10:59:32] [INFO] [fapi.app] MindTrack API ready — file logs also written to logs/mindtrack.log (project root, next to run.py).
 [2026-04-23 10:59:32] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 15:49:14] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:14] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.routers.auth] Register attempt for dup@example.com
+[2026-04-23 15:49:15] [WARNING] [fapi.routers.auth] Register duplicate: Email already registered
+[2026-04-23 15:49:15] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:15] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 15:49:15] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.auth] Logout request
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.auth] Profile request for user 69ea85cc59d42d8376a04355
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.habits] Listed habits for user 69ea85cc59d42d8376a04356
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.logs] Summary for user 69ea85cc59d42d8376a04357 with 0 habits
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [WARNING] [fapi.routers.habits] Create habit validation error: Invalid habit data
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [WARNING] [fapi.routers.ai] AI generate validation error: No active habits to analyze
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.logs] Created log 69ea85cc59d42d8376a0435c
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.logs] Fetched 0 logs for user 69ea85cc59d42d8376a0435d
+[2026-04-23 15:49:16] [INFO] [fapi.app] MindTrack API ready (pid=52193) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:16] [INFO] [fapi.routers.logs] Streak for habit 69ea85cc59d42d8376a0435f: 0
+[2026-04-23 15:49:23] [INFO] [fapi.app] MindTrack API ready (pid=52320) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:23] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 15:49:23] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 15:49:33] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.routers.auth] Register attempt for dup@example.com
+[2026-04-23 15:49:34] [WARNING] [fapi.routers.auth] Register duplicate: Email already registered
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 15:49:34] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.routers.auth] Logout request
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.routers.auth] Profile request for user 69ea85dea30fc2bf0a25f06d
+[2026-04-23 15:49:34] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:34] [INFO] [fapi.routers.habits] Listed habits for user 69ea85dea30fc2bf0a25f06e
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [INFO] [fapi.routers.logs] Summary for user 69ea85dfa30fc2bf0a25f06f with 0 habits
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [WARNING] [fapi.routers.habits] Create habit validation error: Invalid habit data
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [WARNING] [fapi.routers.ai] AI generate validation error: No active habits to analyze
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [INFO] [fapi.routers.logs] Created log 69ea85dfa30fc2bf0a25f074
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [INFO] [fapi.routers.logs] Fetched 0 logs for user 69ea85dfa30fc2bf0a25f075
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [INFO] [fapi.routers.logs] Streak for habit 69ea85dfa30fc2bf0a25f077: 0
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [INFO] [fapi.app] MindTrack API ready (pid=52487) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:49:35] [INFO] [fapi.routers.habits] Listed habits for user 69ea85dfa30fc2bf0a25f089
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:42] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.auth] Register attempt for dup@example.com
+[2026-04-23 15:53:43] [WARNING] [fapi.routers.auth] Register duplicate: Email already registered
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 15:53:43] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.auth] Logout request
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.auth] Profile request for user 69ea86d7851293fb6100ba7e
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.habits] Listed habits for user 69ea86d7851293fb6100ba7f
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.logs] Summary for user 69ea86d7851293fb6100ba80 with 0 habits
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [WARNING] [fapi.routers.habits] Create habit validation error: Invalid habit data
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [WARNING] [fapi.routers.ai] AI generate validation error: No active habits to analyze
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.logs] Created log 69ea86d7851293fb6100ba85
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.logs] Fetched 0 logs for user 69ea86d7851293fb6100ba86
+[2026-04-23 15:53:43] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:43] [INFO] [fapi.routers.logs] Streak for habit 69ea86d7851293fb6100ba88: 0
+[2026-04-23 15:53:44] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:44] [INFO] [fapi.app] MindTrack API ready (pid=55347) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:53:44] [INFO] [fapi.routers.habits] Listed habits for user 69ea86d8851293fb6100ba9a
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:12] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 15:59:12] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.auth] Register attempt for dup@example.com
+[2026-04-23 15:59:13] [WARNING] [fapi.routers.auth] Register duplicate: Email already registered
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 15:59:13] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.auth] Logout request
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.auth] Profile request for user 69ea882189241cc267a17608
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.habits] Listed habits for user 69ea882189241cc267a17609
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.logs] Summary for user 69ea882189241cc267a1760a with 0 habits
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [WARNING] [fapi.routers.habits] Create habit validation error: Invalid habit data
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [WARNING] [fapi.routers.ai] AI generate validation error: No active habits to analyze
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.logs] Created log 69ea882189241cc267a1760f
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.logs] Fetched 0 logs for user 69ea882189241cc267a17610
+[2026-04-23 15:59:13] [INFO] [fapi.app] MindTrack API ready (pid=59150) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 15:59:13] [INFO] [fapi.routers.logs] Streak for habit 69ea882189241cc267a17612: 0
+[2026-04-23 16:28:23] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:23] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:23] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:23] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.routers.auth] Register attempt for dup@example.com
+[2026-04-23 16:28:24] [WARNING] [fapi.routers.auth] Register duplicate: Email already registered
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 16:28:24] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:24] [INFO] [fapi.routers.auth] Logout request
+[2026-04-23 16:28:24] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.routers.auth] Profile request for user 69ea8ef9912f5e7cef8e0f97
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.routers.habits] Listed habits for user 69ea8ef9912f5e7cef8e0f98
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.routers.logs] Summary for user 69ea8ef9912f5e7cef8e0f99 with 0 habits
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [WARNING] [fapi.routers.habits] Create habit validation error: Invalid habit data
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [WARNING] [fapi.routers.ai] AI generate validation error: No active habits to analyze
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.routers.logs] Created log 69ea8ef9912f5e7cef8e0f9e
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.routers.logs] Fetched 0 logs for user 69ea8ef9912f5e7cef8e0f9f
+[2026-04-23 16:28:25] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:25] [INFO] [fapi.routers.logs] Streak for habit 69ea8ef9912f5e7cef8e0fa1: 0
+[2026-04-23 16:28:28] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:28] [INFO] [fapi.app] MindTrack API ready (pid=78713) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:28:28] [INFO] [fapi.routers.habits] Listed habits for user 69ea8efc912f5e7cef8e0fb3
+[2026-04-23 16:32:04] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:04] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:04] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:04] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.routers.auth] Login attempt for a@b.com
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.routers.auth] Register attempt for dup@example.com
+[2026-04-23 16:32:05] [WARNING] [fapi.routers.auth] Register duplicate: Email already registered
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.routers.auth] Register attempt for new503@example.com
+[2026-04-23 16:32:05] [WARNING] [fapi.routers.auth] Register succeeded but automatic sign-in failed: simulated auto-login failure
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:05] [INFO] [fapi.routers.auth] Logout request
+[2026-04-23 16:32:05] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.routers.auth] Profile request for user 69ea8fd65aea1152e796cac0
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.routers.habits] Listed habits for user 69ea8fd65aea1152e796cac1
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.routers.logs] Summary for user 69ea8fd65aea1152e796cac2 with 0 habits
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [WARNING] [fapi.routers.habits] Create habit validation error: Invalid habit data
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [WARNING] [fapi.routers.ai] AI generate validation error: No active habits to analyze
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.routers.logs] Created log 69ea8fd65aea1152e796cac7
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.routers.logs] Fetched 0 logs for user 69ea8fd65aea1152e796cac8
+[2026-04-23 16:32:06] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:06] [INFO] [fapi.routers.logs] Streak for habit 69ea8fd65aea1152e796caca: 0
+[2026-04-23 16:32:09] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:09] [INFO] [fapi.app] MindTrack API ready (pid=81256) — file logs also written to logs/mindtrack.log (project root, next to run.py).
+[2026-04-23 16:32:09] [INFO] [fapi.routers.habits] Listed habits for user 69ea8fd95aea1152e796cadc
+[2026-04-23 16:48:51] [INFO] [fapi.app] MindTrack API ready (pid=92632) — file logs also written to logs/mindtrack.log (project root, next to run.py).

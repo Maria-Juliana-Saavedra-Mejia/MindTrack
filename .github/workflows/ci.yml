@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Lint with flake8
-        run: flake8 backend/app backend/tests --max-line-length=100 --extend-ignore=E501
+        run: flake8 backend/app backend/fapi backend/tests --max-line-length=100 --extend-ignore=E501
       - name: Run tests
         run: |
           pytest -v --tb=short --cov=app --cov-report=term-missing --cov-fail-under=70

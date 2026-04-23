@@ -3,13 +3,37 @@
 
 import jwt
 import pytest
-from flask import Flask
+from bson import ObjectId
+from starlette.testclient import TestClient
+from unittest.mock import MagicMock
 
 from app.models.habit import Habit
 from app.models.user import User
-from app.utils.decorators import jwt_required
-from app.utils.error_handlers import register_error_handlers
 from app.utils.logger import get_logger
+
+_TEST_JWT_SECRET = "a-very-long-test-secret-key-for-jwt-testing"
+
+
+@pytest.fixture
+def mongo_stub(monkeypatch):
+    collections = {}
+
+    def get_collection(name):
+        if name not in collections:
+            coll = MagicMock()
+            coll.find_one.return_value = None
+            coll.find.return_value = []
+            collections[name] = coll
+        return collections[name]
+
+    db = MagicMock()
+    db.__getitem__.side_effect = get_collection
+    mongo_client = MagicMock()
+    mongo_client.__getitem__.return_value = db
+    import fapi.app as fapi_mod
+
+    monkeypatch.setattr(fapi_mod, "MongoClient", lambda *a, **k: mongo_client)
+    return collections
 
 
 def test_user_invalid_email():
@@ -21,6 +45,32 @@ def test_user_password_verification():
     user = User(full_name="A", email="a@b.com", password="password123")
     assert user.verify_password("password123") is True
     assert user.verify_password("wrong") is False
+
+
+def test_user_password_verification_bcrypt_from_dict():
+    from app.utils.passwords import hash_password
+
+    h = hash_password("secretpw")
+    user = User.from_dict(
+        {
+            "full_name": "A",
+            "email": "a@b.com",
+            "password_hash": h,
+        }
+    )
+    assert user.verify_password("secretpw") is True
+    assert user.verify_password("wrong") is False
+
+
+def test_user_legacy_plain_password_from_dict():
+    user = User.from_dict(
+        {
+            "full_name": "A",
+            "email": "a@b.com",
+            "password": "legacyplain",
+        }
+    )
+    assert user.verify_password("legacyplain") is True
 
 
 def test_habit_from_dict_roundtrip():
@@ -45,39 +95,46 @@ def test_get_logger_singleton():
     assert log_a is log_b
 
 
-def test_jwt_required_decorator():
-    app = Flask(__name__)
-    app.config["JWT_SECRET"] = "a-very-long-test-secret-key-for-jwt-testing"
+def test_fastapi_404_returns_json_error_shape(mongo_stub, monkeypatch):
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", _TEST_JWT_SECRET)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    from fapi.app import build_app
 
-    @app.route("/protected")
-    @jwt_required
-    def protected():
-        from flask import g
+    with TestClient(build_app()) as client:
+        resp = client.get("/missing-route-that-does-not-exist-xyz")
+    assert resp.status_code == 404
+    body = resp.json()
+    assert body.get("error") is True
+    assert "status" in body
 
-        return {"user": g.user_id}
 
-    token = jwt.encode(
-        {"sub": "user123"},
-        "a-very-long-test-secret-key-for-jwt-testing",
-        algorithm="HS256",
-    )
-    with app.test_client() as client:
-        resp = client.get("/protected", headers={"Authorization": f"Bearer {token}"})
-        assert resp.status_code == 200
-        assert resp.get_json()["user"] == "user123"
+def test_fastapi_jwt_protects_api_habits(mongo_stub, monkeypatch):
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", _TEST_JWT_SECRET)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    uid = ObjectId()
+    from fapi.app import build_app
+
+    with TestClient(build_app()) as client:
+        habits = mongo_stub["habits"]
+        chain = MagicMock()
+        chain.sort.return_value = []
+        habits.find.return_value = chain
+
+        secret = client.app.state.jwt_secret
+        token = jwt.encode({"sub": str(uid)}, secret, algorithm="HS256")
+        ok = client.get(
+            "/api/habits",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         bad = client.get(
-            "/protected",
+            "/api/habits",
             headers={"Authorization": "Bearer not-a-valid-jwt-token"},
         )
-        assert bad.status_code == 401
-
-
-def test_error_handlers_return_json():
-    app = Flask(__name__)
-    register_error_handlers(app)
-    with app.test_client() as client:
-        resp = client.get("/missing-route-that-does-not-exist-xyz")
-        assert resp.status_code == 404
-        body = resp.get_json()
-        assert body["error"] is True
-        assert "status" in body
+    assert ok.status_code == 200
+    assert "habits" in ok.json()
+    assert bad.status_code == 401

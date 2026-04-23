@@ -24,5 +24,5 @@ def test_validate_success(monkeypatch):
 def test_mongo_uri_strips_trailing_slash(monkeypatch):
     monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017/")
     monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
-    cfg = Config.to_flask_config()
+    cfg = Config.to_app_config()
     assert cfg["MONGO_URI"] == "mongodb://localhost:27017"

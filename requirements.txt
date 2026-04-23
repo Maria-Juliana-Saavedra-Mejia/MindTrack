@@ -1,11 +1,10 @@
 # Install with: pip install -r requirements.txt (from repo root, venv activated)
-flask
-flask-cors
 fastapi
 uvicorn[standard]
 jinja2
 httpx
 pymongo
+bcrypt
 certifi
 pyjwt
 openai

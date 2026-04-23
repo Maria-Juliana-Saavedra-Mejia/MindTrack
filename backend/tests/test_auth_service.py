@@ -7,6 +7,7 @@ import pytest
 from bson import ObjectId
 
 from app.utils.error_handlers import InvalidCredentialsError, UserAlreadyExistsError
+from app.utils.passwords import hash_password
 
 
 def test_register_success(auth_service, mock_db):
@@ -20,7 +21,7 @@ def test_register_success(auth_service, mock_db):
             "_id": inserted_id,
             "full_name": "New User",
             "email": "new@example.com",
-            "password": "password123",
+            "password_hash": hash_password("password123"),
             "preferences": {"reminder_time": "09:00", "theme": "light"},
             "created_at": None,
             "last_login": None,
@@ -34,6 +35,9 @@ def test_register_success(auth_service, mock_db):
     user = auth_service.register_user(payload)
     assert user["email"] == "new@example.com"
     users.insert_one.assert_called_once()
+    inserted = users.insert_one.call_args[0][0]
+    assert "password" not in inserted
+    assert inserted.get("password_hash", "").startswith("$2")
 
 
 def test_register_duplicate_email_raises(auth_service, mock_db):

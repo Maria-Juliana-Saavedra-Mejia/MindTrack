@@ -1,5 +1,5 @@
 # fapi/exception_handlers.py
-"""Map domain exceptions to JSON like the legacy Flask app."""
+"""Map domain exceptions to consistent JSON responses."""
 
 from fastapi import Request
 from fastapi.responses import JSONResponse

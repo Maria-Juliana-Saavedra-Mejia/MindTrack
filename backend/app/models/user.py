@@ -1,8 +1,10 @@
 # backend/app/models/user.py
-"""User domain model (password stored as plain text for local/demo use)."""
+"""User domain model; persisted secret is bcrypt in ``password_hash`` (legacy plain supported)."""
 
 import re
 from datetime import datetime, timezone
+
+from app.utils.passwords import verify_stored_password
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -24,7 +26,7 @@ class User:
 
     def verify_password(self, plain):
         """Return True if plain password matches the stored value."""
-        return self.password == plain
+        return verify_stored_password(plain, self.password)
 
     def to_dict(self, include_password=False):
         """Serialize user for API or storage."""
@@ -42,10 +44,9 @@ class User:
     @classmethod
     def from_dict(cls, data):
         """Hydrate a User instance from a Mongo document."""
-        # `password` is the canonical field (plain text in this project). `password_hash`
-        # is only an alternate key for legacy imports; the value is still compared as plain text.
+        # Prefer bcrypt ``password_hash``; legacy docs may use ``password`` (plain).
         return cls(
             full_name=data.get("full_name", ""),
             email=data.get("email", ""),
-            stored_password=data.get("password") or data.get("password_hash"),
+            stored_password=data.get("password_hash") or data.get("password"),
         )

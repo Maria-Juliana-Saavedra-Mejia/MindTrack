@@ -1,4 +1,4 @@
-# backend/tests/test_flask_integration.py
+# backend/tests/test_api_integration.py
 """Integration tests (FastAPI + Uvicorn stack) with Mongo mocked."""
 
 from datetime import datetime, timedelta, timezone
@@ -8,6 +8,8 @@ import jwt
 import pytest
 from bson import ObjectId
 from starlette.testclient import TestClient
+
+from app.utils.error_handlers import InvalidCredentialsError
 
 from tests.conftest import FakeCursor
 
@@ -191,6 +193,49 @@ def test_register_duplicate(client, mongo_stub):
         },
     )
     assert resp.status_code == 409
+
+
+def test_register_auto_login_fails_returns_503(client, mongo_stub, monkeypatch):
+    """After successful insert, auto-login failure must not use HTTP 500."""
+    users = mongo_stub["users"]
+    oid = ObjectId()
+    users.find_one.side_effect = [
+        None,
+        {
+            "_id": oid,
+            "full_name": "New User",
+            "email": "new503@example.com",
+            "password": "password123",
+            "created_at": datetime.now(timezone.utc),
+            "last_login": None,
+            "preferences": {},
+        },
+    ]
+    users.insert_one.return_value = MagicMock(inserted_id=oid)
+
+    auth = client.app.state.auth_service
+
+    def fail_login(*_a, **_kw):
+        raise InvalidCredentialsError("simulated auto-login failure")
+
+    monkeypatch.setattr(auth, "login_user", fail_login)
+
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "New User",
+            "email": "new503@example.com",
+            "password": "password123",
+        },
+    )
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["error"] is True
+    assert body["status"] == 503
+    assert (
+        "sign-in" in body["message"].lower()
+        or "login" in body["message"].lower()
+    )
 
 
 def test_logout(client):
