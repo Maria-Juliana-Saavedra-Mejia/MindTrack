@@ -18,7 +18,13 @@
     <title>MindTrack — Login</title>
     <script>
       window.MINDTRACK_DEFAULT_API = "";
-      /* Leave empty when opening the UI from python run.py (same port as API). Only set MINDTRACK_DEFAULT_API to a full URL if the HTML is served from elsewhere (e.g. GitHub Pages); do not hardcode http://127.0.0.1:5050 unless the API really listens there. For a different local PORT use window.MINDTRACK_DEV_API_PORT or ?api= once. */
+      /*
+        Easiest: open only the URL printed by `python3 run.py` (same port for UI + API).
+        Live Server (e.g. :5500): run `python3 run.py`, note PORT in the terminal, then either:
+          • Add once to the address bar: ?mt_api_port=PORT   (e.g. ?mt_api_port=5051)
+          • Or full URL: ?api=http://127.0.0.1:PORT
+          • Or set meta mindtrack-dev-api-port above, or uncomment:
+      */
       // window.MINDTRACK_DEV_API_PORT = "5051";
     </script>
     <script>

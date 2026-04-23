@@ -61,6 +61,31 @@ def test_health_endpoint(client):
     assert resp.json()["status"] == "ok"
 
 
+def test_mindtrack_http_port_cors_allows_live_server_with_strict_cors_origins(
+    mongo_stub, monkeypatch,
+):
+    """
+    When CORS_ORIGINS is an explicit whitelist, api.js discovery from Live Server (:5500)
+    must still read GET /mindtrack-http-port — non-production adds a loopback origin regex.
+    """
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("CORS_ORIGINS", "https://production.example.com")
+    monkeypatch.setenv("FLASK_ENV", "development")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5050") as c:
+        r = c.get(
+            "/mindtrack-http-port",
+            headers={"Origin": "http://127.0.0.1:5500"},
+        )
+    assert r.status_code == 200
+    acao = r.headers.get("access-control-allow-origin")
+    assert acao in ("http://127.0.0.1:5500", "*"), acao
+
+
 def test_mindtrack_http_port_prefers_request_url_port(mongo_stub, monkeypatch):
     """Echoes the port used in the HTTP request URL (reload-safe vs env-only)."""
     monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")

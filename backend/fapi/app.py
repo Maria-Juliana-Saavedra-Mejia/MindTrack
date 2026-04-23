@@ -22,34 +22,8 @@ from fapi.exception_handlers import register_domain_handlers
 from fapi.routers import ai, auth, habits, logs
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-_AGENT_DEBUG_NDJSON = os.path.join(_REPO_ROOT, "logs", "debug-1e99b1.log")
 
 _MONGO_SERVER_SELECTION_TIMEOUT_MS = 8000
-_AGENT_DEBUG_FIRST_BROWSER_LOGGED = False
-
-
-def _append_agent_debug_ndjson(
-    payload: dict, *, mirror_stderr: bool = False
-) -> None:
-    """Session debug log (NDJSON line). Writable path; avoids .cursor permission issues."""
-    try:
-        import json as _json_dbg
-        import sys as _sys_dbg
-        import time as _time_dbg
-
-        os.makedirs(os.path.dirname(_AGENT_DEBUG_NDJSON), exist_ok=True)
-        line = (
-            _json_dbg.dumps(
-                {**payload, "timestamp": int(_time_dbg.time() * 1000)}
-            )
-            + "\n"
-        )
-        with open(_AGENT_DEBUG_NDJSON, "a", encoding="utf-8") as _df:
-            _df.write(line)
-        if mirror_stderr:
-            _sys_dbg.stderr.write("MINDTRACK_AGENT_NDJSON " + line.rstrip() + "\n")
-    except Exception:
-        pass
 
 _INDEX_META_DEV_PORT_RE = re.compile(
     r'(<meta\s+name="mindtrack-dev-api-port"\s+content=")([^"]*)(")',
@@ -168,29 +142,6 @@ def build_app() -> FastAPI:
     app = FastAPI(title="MindTrack", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, **Config.fastapi_cors_middleware_options())
 
-    @app.middleware("http")
-    async def _agent_debug_first_request(request: Request, call_next):
-        global _AGENT_DEBUG_FIRST_BROWSER_LOGGED
-        # #region agent log
-        cli = request.client.host if request.client else None
-        if cli != "testclient" and not _AGENT_DEBUG_FIRST_BROWSER_LOGGED:
-            _append_agent_debug_ndjson(
-                {
-                    "sessionId": "1e99b1",
-                    "hypothesisId": "H5",
-                    "location": "fapi/app.py:middleware",
-                    "message": "first_http_request",
-                    "data": {
-                        "path": request.url.path,
-                        "client": cli,
-                    },
-                },
-                mirror_stderr=True,
-            )
-            _AGENT_DEBUG_FIRST_BROWSER_LOGGED = True
-        # #endregion
-        return await call_next(request)
-
     register_bearer_error_handler(app)
     register_domain_handlers(app)
 
@@ -210,22 +161,6 @@ def build_app() -> FastAPI:
     @app.get("/health")
     def health():
         return {"status": "ok"}
-
-    @app.post("/.__mindtrack/debug-log")
-    async def _mindtrack_agent_debug_log(request: Request):
-        """Dev-only NDJSON sink when Cursor ingest (:7609) is unreachable from the browser."""
-        if os.getenv("FLASK_ENV", "development").lower() != "development":
-            return PlainTextResponse("not found", status_code=404)
-        raw = await request.body()
-        if len(raw) > 8192:
-            raw = raw[:8192]
-        try:
-            os.makedirs(os.path.dirname(_AGENT_DEBUG_NDJSON), exist_ok=True)
-            with open(_AGENT_DEBUG_NDJSON, "ab") as _df:
-                _df.write(raw.strip() + b"\n")
-        except Exception:
-            pass
-        return PlainTextResponse("ok")
 
     @app.get("/mindtrack-http-port")
     def mindtrack_http_port(request: Request):

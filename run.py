@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fapi.app import _append_agent_debug_ndjson, build_app
+from fapi.app import build_app
 
 app = build_app()
 
@@ -116,28 +116,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print()
     try:
-        # #region agent log
-        try:
-            _append_agent_debug_ndjson(
-                {
-                    "sessionId": "1e99b1",
-                    "hypothesisId": "H3",
-                    "location": "run.py:uvicorn",
-                    "message": "uvicorn_start",
-                    "data": {
-                        "port": port,
-                        "reload": _reload,
-                        "mindtrack_http_port": os.environ.get(
-                            "MINDTRACK_HTTP_PORT"
-                        ),
-                        "pid": os.getpid(),
-                    },
-                },
-                mirror_stderr=True,
-            )
-        except Exception:
-            pass
-        # #endregion
         _reload_kw: dict = {}
         if _reload:
             _reload_kw["reload_dirs"] = [

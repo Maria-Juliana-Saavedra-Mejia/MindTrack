@@ -66,13 +66,20 @@ class Config:
         """
         raw = os.getenv("CORS_ORIGINS", "").strip()
         if raw:
-            return {
+            opts: dict = {
                 "allow_origins": [o.strip() for o in raw.split(",") if o.strip()],
                 "allow_origin_regex": None,
                 "allow_credentials": False,
                 "allow_methods": ["*"],
                 "allow_headers": ["*"],
             }
+            if cls._runtime_env_name() != "production":
+                # Allow Live Server / preview on any loopback port (e.g. :5500) to read GET
+                # /mindtrack-http-port during api.js discovery when CORS_ORIGINS is an explicit list.
+                opts["allow_origin_regex"] = (
+                    r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$"
+                )
+            return opts
         if cls._runtime_env_name() == "production":
             return {
                 "allow_origins": [],

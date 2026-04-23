@@ -40,6 +40,7 @@
  * - window.MINDTRACK_API_BASE, then MINDTRACK_DEFAULT_API, then meta mindtrack-api-base
  *   (each skipped if “stale” vs unified loopback port 5050–5059, same as localStorage)
  * - ?api=https://host (saved to localStorage unless stale vs unified port 5050–5059; query stripped from bar)
+ * - ?mt_api_port=5051 on loopback — shorthand for ?api=http://127.0.0.1:5051 (Live Server + run.py)
  * - localStorage mindtrack_api_base (ignored if stale: another 5050–5059 slot than the current page)
  * - Local dev on loopback, page on a *different* port than the API (e.g. Live Server) -> same host + MINDTRACK_DEV_API_PORT, or meta mindtrack-dev-api-port, or 5050. If the page is already on 5050–5059 (run.py’s range), same origin is used so 5051 when 5050 is busy still works.
    *   macOS AirPlay Receiver often binds :5000 — we default to 5050 to avoid it; override with MINDTRACK_DEV_API_PORT if you use another API port.
@@ -58,6 +59,73 @@ function _normalizeApiBase(s) {
    * otherwise build https://x.com/api/api/auth/... and get 404. Strip a trailing /api. */
   t = t.replace(/\/api\/?$/i, "");
   return t.replace(/\/$/, "");
+}
+
+/**
+ * Local MindTrack (run.py) listens on HTTP. If the page is http:// and localStorage / ?api=
+ * pinned https://127.0.0.1:505x, requests fail (TLS on a plain-HTTP port). Rewrite to http://
+ * for loopback + ports 5050–5059 only.
+ *
+ * We do NOT rewrite http→https when the page is https://: that would not make run.py work
+ * without a TLS listener. Mixed content (https page → http API) must be fixed by opening
+ * the UI over http:// or running HTTPS on both ends with real certs.
+ */
+function _alignLoopbackMindtrackDevApiProtocolWithPage(normalizedBase) {
+  if (!normalizedBase) {
+    return normalizedBase;
+  }
+  try {
+    const pageProto =
+      typeof window !== "undefined" && window.location
+        ? window.location.protocol
+        : "";
+    if (pageProto !== "http:") {
+      return normalizedBase;
+    }
+    const u = new URL(normalizedBase);
+    if (!_isLoopbackHost(u.hostname)) {
+      return normalizedBase;
+    }
+    let pn;
+    if (u.port) {
+      pn = parseInt(u.port, 10);
+    } else if (u.protocol === "https:") {
+      pn = 443;
+    } else if (u.protocol === "http:") {
+      pn = 80;
+    } else {
+      return normalizedBase;
+    }
+    if (Number.isNaN(pn) || pn < 5050 || pn > 5059) {
+      return normalizedBase;
+    }
+    if (u.protocol !== "https:") {
+      return normalizedBase;
+    }
+    const v = new URL(normalizedBase);
+    v.protocol = "http:";
+    return _normalizeApiBase(v.href);
+  } catch (e) {
+    return normalizedBase;
+  }
+}
+
+function _finalizeMindtrackApiBase(normalizedBase, persistIfAligned) {
+  const aligned = _alignLoopbackMindtrackDevApiProtocolWithPage(normalizedBase);
+  if (
+    persistIfAligned &&
+    aligned &&
+    normalizedBase &&
+    aligned !== normalizedBase &&
+    typeof localStorage !== "undefined"
+  ) {
+    try {
+      localStorage.setItem("mindtrack_api_base", aligned);
+    } catch (e) {
+      /* private mode */
+    }
+  }
+  return aligned;
 }
 
 function _isLoopbackHost(hostname) {
@@ -228,36 +296,6 @@ function mindtrackApiDebugEnabled() {
   return false;
 }
 
-/** Session NDJSON: Cursor ingest, else POST same API base (dev). */
-function _agentDbgSend(payload) {
-  var body = JSON.stringify(payload);
-  fetch(
-    "http://127.0.0.1:7609/ingest/776f76c6-7b97-4dd4-af2c-79af44a757b4",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "1e99b1",
-      },
-      body: body,
-    }
-  ).catch(function () {
-    try {
-      var base = getApiBase();
-      if (base) {
-        fetch(base.replace(/\/+$/, "") + "/.__mindtrack/debug-log", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: body,
-          mode: "cors",
-        }).catch(function () {});
-      }
-    } catch (e) {
-      /* */
-    }
-  });
-}
-
 function getApiBase() {
   const ph =
     typeof window !== "undefined" && window.location
@@ -285,7 +323,7 @@ function getApiBase() {
   ) {
     const o = explicitBaseOrNull(window.MINDTRACK_API_BASE);
     if (o) {
-      return o;
+      return _finalizeMindtrackApiBase(o, false);
     }
   }
   if (
@@ -294,7 +332,7 @@ function getApiBase() {
   ) {
     const o = explicitBaseOrNull(window.MINDTRACK_DEFAULT_API);
     if (o) {
-      return o;
+      return _finalizeMindtrackApiBase(o, false);
     }
   }
   const meta = document.querySelector('meta[name="mindtrack-api-base"]');
@@ -302,19 +340,47 @@ function getApiBase() {
   if (fromMeta && fromMeta.trim()) {
     const o = explicitBaseOrNull(fromMeta);
     if (o) {
-      return o;
+      return _finalizeMindtrackApiBase(o, false);
     }
   }
   try {
-    const q = new URLSearchParams(window.location.search || "").get("api");
+    const sp = new URLSearchParams(window.location.search || "");
+    let q = sp.get("api");
+    if (!q || !String(q).trim()) {
+      const mtp = sp.get("mt_api_port");
+      if (mtp && String(mtp).trim()) {
+        const trimmed = String(mtp).trim();
+        if (/^\d+$/.test(trimmed) && _isLoopbackHost(ph)) {
+          const pn = parseInt(trimmed, 10);
+          if (
+            !Number.isNaN(pn) &&
+            pn >= 1 &&
+            pn <= 65535
+          ) {
+            const probeHost = _httpLoopbackHostForFetch(
+              _canonicalLoopbackProbeHost(ph)
+            );
+            q = "http://" + probeHost + ":" + pn;
+          }
+        }
+      }
+    }
     if (q && String(q).trim()) {
       const b = _normalizeApiBase(String(q));
       if (b) {
         const queryStale = _isStaleStoredMindtrackApiBase(b, ph, pp);
         try {
           const u = new URL(window.location.href);
+          let changed = false;
           if (u.searchParams.has("api")) {
             u.searchParams.delete("api");
+            changed = true;
+          }
+          if (u.searchParams.has("mt_api_port")) {
+            u.searchParams.delete("mt_api_port");
+            changed = true;
+          }
+          if (changed) {
             const qs = u.searchParams.toString();
             const clean = u.pathname + (qs ? "?" + qs : "") + u.hash;
             history.replaceState(null, "", clean);
@@ -335,7 +401,7 @@ function getApiBase() {
           } catch (e) {
             /* private mode */
           }
-          return b;
+          return _finalizeMindtrackApiBase(b, true);
         }
       }
     }
@@ -361,7 +427,7 @@ function getApiBase() {
           /* private mode */
         }
       } else {
-        return b;
+        return _finalizeMindtrackApiBase(b, true);
       }
     }
   } catch (e) {
@@ -413,7 +479,10 @@ function getApiBase() {
     !onMindtrackUnifiedPort &&
     p !== devApiPort
   ) {
-    return window.location.protocol + "//" + h + ":" + devApiPort;
+    return _finalizeMindtrackApiBase(
+      window.location.protocol + "//" + h + ":" + devApiPort,
+      false
+    );
   }
   return "";
 }
@@ -445,6 +514,8 @@ function _staticSiteNeedsExplicitApi() {
 
 let _mindtrackPortProbePromise = null;
 let _mindtrackPortProbeSucceeded = false;
+/** True after a full cross-port probe finished with no responding MindTrack (see logs H1). */
+let _mindtrackProbeExhaustedNoMatch = false;
 
 /** Brackets IPv6 literals for URL strings (fetch / localStorage base). */
 function _httpLoopbackHostForFetch(hostname) {
@@ -470,6 +541,71 @@ function _canonicalLoopbackProbeHost(hostname) {
     return "[::1]";
   }
   return hostname;
+}
+
+/** User pinned API via HTML/URL/storage — do not block on failed port scan. */
+function _hasExplicitMindtrackApiHint() {
+  try {
+    const ph =
+      typeof window !== "undefined" && window.location
+        ? window.location.hostname
+        : "";
+    const pp =
+      typeof window !== "undefined" && window.location
+        ? String(window.location.port || "")
+        : "";
+    if (
+      typeof window !== "undefined" &&
+      typeof window.MINDTRACK_API_BASE === "string" &&
+      window.MINDTRACK_API_BASE.trim()
+    ) {
+      return true;
+    }
+    if (
+      typeof window !== "undefined" &&
+      typeof window.MINDTRACK_DEFAULT_API === "string" &&
+      window.MINDTRACK_DEFAULT_API.trim()
+    ) {
+      return true;
+    }
+    if (
+      typeof window !== "undefined" &&
+      typeof window.MINDTRACK_DEV_API_PORT === "string" &&
+      window.MINDTRACK_DEV_API_PORT.trim()
+    ) {
+      return true;
+    }
+    const mb = document.querySelector('meta[name="mindtrack-api-base"]');
+    if (mb && mb.getAttribute("content") && String(mb.getAttribute("content")).trim()) {
+      return true;
+    }
+    const md = document.querySelector('meta[name="mindtrack-dev-api-port"]');
+    if (md && md.getAttribute("content") && String(md.getAttribute("content")).trim()) {
+      return true;
+    }
+    const sp = new URLSearchParams(window.location.search || "");
+    if (sp.get("api") && String(sp.get("api")).trim()) {
+      return true;
+    }
+    if (sp.get("mt_api_port") && String(sp.get("mt_api_port")).trim()) {
+      return true;
+    }
+    /* Do not treat stale mindtrack_api_base as “user intent” (same rules as getApiBase). */
+    if (typeof localStorage !== "undefined") {
+      const raw = localStorage.getItem("mindtrack_api_base");
+      const norm = _normalizeApiBase(raw);
+      if (
+        raw &&
+        norm &&
+        !_isStaleStoredMindtrackApiBase(norm, ph, pp)
+      ) {
+        return true;
+      }
+    }
+  } catch (e) {
+    /* */
+  }
+  return false;
 }
 
 /** Live Server / preview on loopback with a non-unified port: probe where MindTrack listens. */
@@ -533,6 +669,7 @@ function _maybeProbeMindtrackListenPort() {
     ports.push(x);
   });
   _mindtrackPortProbePromise = new Promise(function (resolve) {
+    _mindtrackProbeExhaustedNoMatch = false;
     let settled = false;
     let foundPort = false;
     let pending = ports.length;
@@ -552,7 +689,7 @@ function _maybeProbeMindtrackListenPort() {
       const c = new AbortController();
       const t = setTimeout(function () {
         c.abort();
-      }, 700);
+      }, 1200);
       fetch(
         "http://" + hostFetch + ":" + port + "/mindtrack-http-port",
         {
@@ -582,16 +719,6 @@ function _maybeProbeMindtrackListenPort() {
           } catch (e) {
             /* */
           }
-          // #region agent log
-          _agentDbgSend({
-            sessionId: "1e99b1",
-            hypothesisId: "H2",
-            location: "api.js:probe",
-            message: "probe_found_port",
-            data: { port: n, hostFetch: hostFetch },
-            timestamp: Date.now(),
-          });
-          // #endregion
           finish();
         })
         .catch(function () {
@@ -601,6 +728,9 @@ function _maybeProbeMindtrackListenPort() {
           clearTimeout(t);
           pending -= 1;
           if (pending <= 0) {
+            if (!foundPort) {
+              _mindtrackProbeExhaustedNoMatch = true;
+            }
             finish();
           }
         });
@@ -614,6 +744,18 @@ function _maybeProbeMindtrackListenPort() {
 async function apiFetch(endpoint, method = "GET", body = null) {
   await _maybeProbeMindtrackListenPort();
   if (
+    _needsMindtrackListenPortProbe() &&
+    !_mindtrackPortProbeSucceeded &&
+    _mindtrackProbeExhaustedNoMatch &&
+    !_hasExplicitMindtrackApiHint()
+  ) {
+    throw new Error(
+      "MindTrack API was not found on this machine (port scan finished with no response). " +
+        "Start the backend from the project folder: python3 run.py — then open the URL it prints in the terminal, " +
+        "or add once to this page's address bar: ?api=http://127.0.0.1:PORT (use the PORT shown, e.g. 5050 or 5051)."
+    );
+  }
+  if (
     !String(endpoint).startsWith("http") &&
     _staticSiteNeedsExplicitApi() &&
     !getApiBase()
@@ -625,34 +767,6 @@ async function apiFetch(endpoint, method = "GET", body = null) {
     );
   }
   const url = apiUrl(endpoint);
-  // #region agent log
-  try {
-    var _lsHas = false;
-    try {
-      _lsHas = !!localStorage.getItem("mindtrack_api_base");
-    } catch (e1) {
-      /* */
-    }
-    _agentDbgSend({
-      sessionId: "1e99b1",
-      hypothesisId: "H1",
-      location: "api.js:apiFetch",
-      message: "before_fetch",
-      data: {
-        resolvedUrl: url,
-        apiBase: getApiBase() || "",
-        pageHref:
-          typeof window !== "undefined" ? window.location.href : "",
-        probeOk: _mindtrackPortProbeSucceeded,
-        needsProbe: _needsMindtrackListenPortProbe(),
-        storedMindtrackApiBase: _lsHas,
-      },
-      timestamp: Date.now(),
-    });
-  } catch (eDbg) {
-    /* */
-  }
-  // #endregion
   if (mindtrackApiDebugEnabled()) {
     console.log("[MindTrack API] request", {
       method,
@@ -677,39 +791,6 @@ async function apiFetch(endpoint, method = "GET", body = null) {
   try {
     response = await fetch(url, options);
   } catch (err) {
-    // #region agent log
-    try {
-      _agentDbgSend({
-        sessionId: "1e99b1",
-        hypothesisId: "H1",
-        location: "api.js:apiFetch",
-        message: "fetch_error",
-        data: {
-          errName: err && err.name ? String(err.name) : "unknown",
-          resolvedUrl: url,
-          apiBase: getApiBase() || "",
-        },
-        timestamp: Date.now(),
-      });
-    } catch (e2) {
-      /* */
-    }
-    try {
-      console.warn(
-        "MINDTRACK_AGENT_NDJSON_FETCH_ERROR",
-        JSON.stringify({
-          sessionId: "1e99b1",
-          hypothesisId: "H1",
-          message: "fetch_error",
-          resolvedUrl: url,
-          apiBase: getApiBase() || "",
-          errName: err && err.name ? String(err.name) : "unknown",
-        })
-      );
-    } catch (e3) {
-      /* */
-    }
-    // #endregion
     let storedApi = null;
     try {
       storedApi = localStorage.getItem("mindtrack_api_base");
@@ -738,7 +819,9 @@ async function apiFetch(endpoint, method = "GET", body = null) {
     throw new Error(
       "Could not reach the API: " + url + ". 1) Run the backend: python run.py. " +
         "2) In the browser open " + health + " (same host/port as the API; use the port run.py printed, e.g. 5050 or 5051). " +
-        "3) If the page uses http but the API is https (or the reverse), the browser will block; keep both on http for local dev.",
+        "3) Scheme mismatch: an https:// page cannot fetch an http:// API (mixed content — the browser blocks it). " +
+        "Fix: open the UI over http:// (e.g. the URL from run.py), or terminate TLS in front of the API and use https for both. " +
+        "(On an http:// page, a saved https:// API on loopback :5050–5059 is rewritten to http:// automatically.)",
       { cause: err }
     );
   }
