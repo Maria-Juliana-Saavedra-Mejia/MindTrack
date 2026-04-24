@@ -4,10 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
-      GitHub Pages + API (Render/Fly/etc.):
-      • mindtrack-api-base (or MINDTRACK_DEFAULT_API below): https://your-api.host — no /api suffix; must be https (Pages is https).
-      • On the API: CORS_ORIGINS=https://youruser.github.io (no path), FLASK_ENV=production, JWT_SECRET, Mongo env.
-      • Assets use a computed <base href>; for a custom base, set mindtrack-base-path (e.g. /MyRepo/).
+      Deployment (GitHub Pages + API on Render/Fly/etc.):
+      • Easiest: GitHub Actions Pages — set repo secret MINDTRACK_API_BASE=https://your-api.host (no /api).
+        Settings → Pages → Source: GitHub Actions. See README.md "GitHub Pages".
+      • Or set mindtrack-api-base / MINDTRACK_DEFAULT_API below to that HTTPS root.
+      • On the API: CORS_ORIGINS=https://youruser.github.io, FLASK_ENV=production.
     -->
     <meta name="mindtrack-base-path" content="" />
     <meta name="mindtrack-api-base" content="" />
@@ -45,14 +46,6 @@
           window.MINDTRACK_BASE = String(meta.getAttribute("content")).trim().replace(/\/?$/, "/");
         } else {
           window.MINDTRACK_BASE = mindtrackStaticAppRootFromPathname();
-        }
-        var baseEl = document.createElement("base");
-        baseEl.href = window.MINDTRACK_BASE;
-        var charsetMeta = document.head.querySelector("meta[charset]");
-        if (charsetMeta && charsetMeta.insertAdjacentElement) {
-          charsetMeta.insertAdjacentElement("afterend", baseEl);
-        } else {
-          document.head.insertBefore(baseEl, document.head.firstChild);
         }
       })();
     </script>

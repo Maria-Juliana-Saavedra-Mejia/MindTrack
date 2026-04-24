@@ -96,6 +96,16 @@ Example (replace `PORT` with the number from the terminal): `http://127.0.0.1:PO
 - **HTTPS page, HTTP API (mixed content)** — Browsers block **`fetch()`** from an **`https://` page to an **`http://` API** (not the other way around). For local dev, open the UI over **`http://`** (e.g. the URL from **`python3 run.py`**) or terminate TLS in front of the API and use **https** for both. If the UI is **`http://`** but **`mindtrack_api_base`** wrongly used **`https://`** on loopback **:5050–5059**, **`api.js`** rewrites it to **`http://`** automatically.
 - **Live Server / VS Code preview on another port** — **`api.js`** probes **`/mindtrack-http-port`** when possible and saves **`mindtrack_api_base`** when MindTrack responds. Quickest manual pin: **`?mt_api_port=PORT`** or **`?api=http://127.0.0.1:PORT`** (`PORT` from **`python3 run.py`**). Or set **`window.MINDTRACK_DEV_API_PORT`**, **`meta mindtrack-dev-api-port`**, etc. — see **`index.html`** comments.
 
+## GitHub Pages (static UI + hosted API)
+
+GitHub Pages only serves static files; the FastAPI app must run elsewhere (Render, Fly, Railway, etc.) over **HTTPS**.
+
+1. **API URL in the built site** — Either:
+   - **Recommended:** Enable **GitHub Actions** as the Pages source, add repository secret **`MINDTRACK_API_BASE`** = your API root (e.g. `https://mindtrack-api.onrender.com`, no `/api` suffix). Push to **`main`**; workflow **Deploy GitHub Pages** copies `index.html` + `frontend/` into `_site` and injects that URL into the **`mindtrack-api-base`** meta tag before publish.
+   - **Or** deploy Pages from a branch and edit **`index.html`** so **`mindtrack-api-base`** or **`window.MINDTRACK_DEFAULT_API`** is that same HTTPS root (you can commit a public API URL if it is not secret).
+2. **CORS on the API** — Set **`CORS_ORIGINS`** to **`https://YOURGITHUBUSERNAME.github.io`** (origin only, no path). Set **`FLASK_ENV=production`** (or **`ENV=production`**) so production CORS rules apply.
+3. **Repo root** — Keep **`index.html`** at the repository root and use relative **`frontend/static/...`** asset paths (already the default) so project URLs like **`https://user.github.io/MindTrack/`** load CSS/JS correctly. A **`.nojekyll`** file at the root disables Jekyll so static paths are not altered.
+
 ## Using the app
 
 - **Login** — Email, password, optional “Remember me” (token is stored in the browser; use a private device).
@@ -118,7 +128,7 @@ MindTrack/
 ├── frontend/
 │   ├── static/              # CSS and JavaScript (served at /static/...)
 │   └── templates/           # Jinja pages (dashboard, habits, log)
-├── .github/workflows/       # CI (flake8 + pytest + coverage)
+├── .github/workflows/       # CI + optional GitHub Pages deploy
 ├── run.py                   # FastAPI + Uvicorn entry (adds backend/ to Python path)
 ├── requirements.txt
 ├── .env                     # You create this (gitignored); see "Where is .env" above
