@@ -129,6 +129,18 @@ body {
   }
 }
 
+.pages-api-hint {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text-muted, #4a5568);
+  background: #f0f9f6;
+  border: 1px solid rgba(15, 110, 86, 0.25);
+  border-radius: var(--radius-md);
+  max-width: 28rem;
+}
+
 .form-grid {
   display: grid;
   gap: 1rem;

@@ -50,8 +50,8 @@ jobs:
           if [ -z "$API" ]; then API="${VAR_API:-}"; fi
           API="$(printf '%s' "$API" | tr -d '\r' | sed 's/[[:space:]]*$//')"
           if [ -z "$API" ]; then
-            echo "::warning::Set secret or variable MINDTRACK_API_BASE — otherwise GitHub Pages login will fail."
-            exit 0
+            echo "::error::Set repository secret or variable MINDTRACK_API_BASE to your HTTPS API root (no /api), e.g. https://your-app.onrender.com — then re-run this workflow. Without it, GitHub Pages login cannot call any API."
+            exit 1
           fi
           export MINDTRACK_API_BASE="$API"
           python3 << 'PY'

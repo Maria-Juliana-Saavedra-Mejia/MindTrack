@@ -621,6 +621,45 @@ function _maybeProbeMindtrackListenPort() {
   return Promise.resolve();
 }
 
+/**
+ * Browsers block active mixed content: an https:// page cannot fetch http:// (including loopback).
+ * Fail fast with a clear message instead of a generic "Could not reach" after fetch throws.
+ */
+function _throwIfHttpsPageBlocksHttpApi(resolvedUrl) {
+  if (typeof window === "undefined" || !window.location) {
+    return;
+  }
+  if (window.location.protocol !== "https:") {
+    return;
+  }
+  let req;
+  try {
+    req = new URL(resolvedUrl, window.location.href);
+  } catch (e) {
+    return;
+  }
+  if (req.protocol !== "http:") {
+    return;
+  }
+  if (_isLoopbackHost(req.hostname)) {
+    try {
+      localStorage.removeItem("mindtrack_api_base");
+    } catch (e) {
+      /* private mode */
+    }
+    throw new Error(
+      "This page is https but the API URL is http on your computer (e.g. 127.0.0.1). " +
+        "Browsers block that. For GitHub Pages set Actions secret MINDTRACK_API_BASE to your " +
+        "deployed https:// API (Render, etc.). Or open MindTrack at the http:// address printed by " +
+        "run.py on your machine—not github.io."
+    );
+  }
+  throw new Error(
+    "This page is https but the API URL is http. Use an https:// API root " +
+      "(mindtrack-api-base / MINDTRACK_API_BASE / Actions secret), with no /api suffix."
+  );
+}
+
 async function apiFetch(endpoint, method = "GET", body = null) {
   await _maybeProbeMindtrackListenPort();
   if (
@@ -629,12 +668,15 @@ async function apiFetch(endpoint, method = "GET", body = null) {
     !getApiBase()
   ) {
     throw new Error(
-      "API URL is not set for this host. In index.html set " +
-        "MINDTRACK_DEFAULT_API or the mindtrack-api-base meta to your " +
-        "API server root (https://...), with no /api suffix."
+      "API URL is not set for this host. GitHub Pages has no backend. " +
+        "1) GitHub repo → Settings → Secrets and variables → Actions → New repository secret: " +
+        "name MINDTRACK_API_BASE, value your deployed API root (https://..., no /api). " +
+        "2) Actions → Deploy GitHub Pages → run workflow again. " +
+        "Or edit index.html: meta mindtrack-api-base or window.MINDTRACK_DEFAULT_API to that same https URL."
     );
   }
   const url = apiUrl(endpoint);
+  _throwIfHttpsPageBlocksHttpApi(url);
   if (mindtrackApiDebugEnabled()) {
     console.log("[MindTrack API] request", {
       method,

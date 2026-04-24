@@ -12,13 +12,51 @@ function activateTab(target) {
   registerPanel.classList.toggle("active", !isLogin);
 }
 
-loginTab.addEventListener("click", () => activateTab("login"));
-registerTab.addEventListener("click", () => activateTab("register"));
+loginTab.addEventListener("click", () => {
+  activateTab("login");
+  _setPagesApiSetupHint("");
+});
+registerTab.addEventListener("click", () => {
+  activateTab("register");
+  _setPagesApiSetupHint("");
+});
 
 function showError(id, message) {
   const el = document.getElementById(id);
   if (el) {
     el.textContent = message || "";
+  }
+}
+
+function _isGithubPagesHost() {
+  try {
+    const h = window.location.hostname || "";
+    return h.endsWith(".github.io") || h === "github.io";
+  } catch (e) {
+    return false;
+  }
+}
+
+function _setPagesApiSetupHint(message) {
+  const hint = document.getElementById("github-pages-api-setup-hint");
+  if (!hint) {
+    return;
+  }
+  const isMissing =
+    message &&
+    String(message).indexOf("API URL is not set for this host") !== -1;
+  if (isMissing && _isGithubPagesHost()) {
+    const origin = window.location.origin || "https://YOURUSERNAME.github.io";
+    hint.textContent =
+      "GitHub Pages only serves this login page. Add the Actions secret or variable " +
+      "MINDTRACK_API_BASE (HTTPS API root, no /api), then redeploy Pages. On your API host " +
+      "set CORS_ORIGINS to " +
+      origin +
+      " and FLASK_ENV=production. Details: README → GitHub Pages (Troubleshooting).";
+    hint.hidden = false;
+  } else {
+    hint.textContent = "";
+    hint.hidden = true;
   }
 }
 
@@ -70,9 +108,12 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     const data = await apiFetch("/api/auth/login", "POST", { email, password });
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("mindtrack_user", JSON.stringify(data.user));
+    _setPagesApiSetupHint("");
     await redirectAfterAuth(data);
   } catch (err) {
-    showError("login-password-error", err.message);
+    const msg = err && err.message ? err.message : "";
+    showError("login-password-error", msg);
+    _setPagesApiSetupHint(msg);
   }
 });
 
@@ -119,8 +160,11 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
     });
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("mindtrack_user", JSON.stringify(data.user));
+    _setPagesApiSetupHint("");
     await redirectAfterAuth(data);
   } catch (err) {
-    showError("reg-email-error", err.message);
+    const msg = err && err.message ? err.message : "";
+    showError("reg-email-error", msg);
+    _setPagesApiSetupHint(msg);
   }
 });

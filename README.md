@@ -101,10 +101,18 @@ Example (replace `PORT` with the number from the terminal): `http://127.0.0.1:PO
 GitHub Pages only serves static files; the FastAPI app must run elsewhere (Render, Fly, Railway, etc.) over **HTTPS**.
 
 1. **API URL in the built site** — Either:
-   - **Recommended:** Enable **GitHub Actions** as the Pages source. Set **`MINDTRACK_API_BASE`** as a **repository secret** *or* (for a public URL) a **repository variable** with the same name. Value = your API root (e.g. `https://mindtrack-api.onrender.com`, no `/api`). Push to **`main`**; **Deploy GitHub Pages** builds `_site` and writes **`mindtrack-api.json`** plus the **`mindtrack-api-base`** meta tag. **`index.html`** loads that JSON synchronously before **`api.js`**, so the API base is set even if meta patching fails.
+   - **Recommended:** Enable **GitHub Actions** as the Pages source. Set **`MINDTRACK_API_BASE`** as a **repository secret** *or* (for a public URL) a **repository variable** with the same name. Value = your API root (e.g. `https://mindtrack-api.onrender.com`, no `/api`). Push to **`main`**; **Deploy GitHub Pages** builds `_site` and writes **`mindtrack-api.json`** plus the **`mindtrack-api-base`** meta tag. **`index.html`** loads that JSON synchronously before **`api.js`**, so the API base is set even if meta patching fails. **If this variable is missing, the Deploy GitHub Pages workflow fails on purpose** so a broken login site is not published; add the secret and re-run the workflow.
    - **Or** deploy Pages from a branch: add a root **`mindtrack-api.json`** file to the repo with `{"apiBase":"https://your-api..."}` (same shape as the workflow output), **or** set **`mindtrack-api-base`** / **`window.MINDTRACK_DEFAULT_API`** in **`index.html`**.
 2. **CORS on the API** — Set **`CORS_ORIGINS`** to **`https://YOURGITHUBUSERNAME.github.io`** (origin only, no path). Set **`FLASK_ENV=production`** (or **`ENV=production`**) so production CORS rules apply.
 3. **Repo root** — Keep **`index.html`** at the repository root and use relative **`frontend/static/...`** asset paths (already the default) so project URLs like **`https://user.github.io/MindTrack/`** load CSS/JS correctly. A **`.nojekyll`** file at the root disables Jekyll so static paths are not altered.
+
+### Troubleshooting: "API URL is not set for this host"
+
+That message means the Pages site has **no API base** in the browser (empty **`mindtrack-api-base`** meta and no usable **`mindtrack-api.json`** / **`window.MINDTRACK_DEFAULT_API`**).
+
+1. **GitHub Actions deploy:** Add **`MINDTRACK_API_BASE`** (secret or variable) with value **`https://your-api.example.com`** (HTTPS root only, **no** `/api`). Push to **`main`** or re-run **Deploy GitHub Pages** so the inject step patches **`_site/index.html`** and **`_site/mindtrack-api.json`**.
+2. **API host:** Set **`CORS_ORIGINS`** to **`https://YOURUSERNAME.github.io`** (origin only; project Pages under **`/MindTrack/`** still use that same origin). Use **`FLASK_ENV=production`** (or **`ENV=production`**) so CORS is enforced for production.
+3. **Branch deploy without Actions inject:** Put **`mindtrack-api.json`** at the site root with **`{"apiBase":"https://..."}`**, or set **`mindtrack-api-base`** / **`MINDTRACK_DEFAULT_API`** in **`index.html`**, then redeploy.
 
 ## Using the app
 
