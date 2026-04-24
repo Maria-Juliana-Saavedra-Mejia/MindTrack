@@ -39,6 +39,7 @@ jobs:
           cp index.html _site/index.html
           cp -r frontend _site/frontend
           if [ -f .nojekyll ]; then cp .nojekyll _site/.nojekyll; else touch _site/.nojekyll; fi
+          printf '%s\n' '{}' > _site/mindtrack-api.json
 
       - name: Inject API URL for Pages (meta + mindtrack-api.json)
         env:
