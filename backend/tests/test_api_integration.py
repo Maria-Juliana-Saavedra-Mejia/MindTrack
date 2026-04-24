@@ -33,6 +33,9 @@ def mongo_stub(monkeypatch):
     import fapi.app as fapi_mod
 
     monkeypatch.setattr(fapi_mod, "MongoClient", lambda *a, **k: mongo_client)
+    # Eager-create collections tests index as mongo_stub["habits"] (before any TestClient).
+    for _name in ("users", "habits", "habit_logs", "ai_insights"):
+        get_collection(_name)
     return collections
 
 
@@ -455,7 +458,6 @@ def test_ai_generate_missing_openai_key_returns_503(mongo_stub, monkeypatch):
     """When OPENAI_API_KEY is unset, do not call OpenAI; return a clear 503."""
     monkeypatch.setenv("OPENAI_API_KEY", "")
     from fapi.app import build_app
-    from starlette.testclient import TestClient
 
     uid = ObjectId()
     hid = ObjectId()
