@@ -8,15 +8,15 @@
 }
 
 .sidebar {
-  --sidebar-fg: #e8f5f0;
-  --sidebar-fg-muted: rgba(232, 245, 240, 0.72);
-  background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
+  --sidebar-fg: #f1f5f9;
+  --sidebar-fg-muted: #94a3b8;
+  background: #0f172a;
   color: var(--sidebar-fg);
-  padding: 1.35rem 0.85rem;
+  padding: 1.25rem 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 1rem;
+  border-right: 1px solid #1e293b;
 }
 
 .sidebar-logo-link {
@@ -28,11 +28,11 @@
 }
 
 .sidebar-logo-link:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-logo-link:focus-visible {
-  outline: 2px solid rgba(167, 243, 208, 0.65);
+  outline: 2px solid rgba(52, 211, 153, 0.55);
   outline-offset: 3px;
 }
 
@@ -44,10 +44,11 @@
 
 .sidebar .logo .app-logo {
   display: block;
-  max-width: 100%;
-  width: 100%;
+  width: auto;
+  max-width: min(160px, 85vw);
   height: auto;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  margin-inline: auto;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.25));
 }
 
 .sidebar-nav {
@@ -81,7 +82,7 @@
 .sidebar-nav__link.active {
   color: #fff;
   background: rgba(52, 211, 153, 0.12);
-  border-color: rgba(52, 211, 153, 0.25);
+  border-color: rgba(52, 211, 153, 0.22);
   box-shadow: inset 3px 0 0 #34d399;
 }
 
@@ -112,15 +113,15 @@
 }
 
 html[data-theme="dark"] .sidebar {
-  --sidebar-fg: #f1f5f9;
+  --sidebar-fg: #f8fafc;
   --sidebar-fg-muted: #94a3b8;
-  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
-  border-right-color: var(--color-border);
+  background: linear-gradient(180deg, #020617 0%, #0f172a 55%);
+  border-right-color: #334155;
 }
 
 html[data-theme="dark"] .sidebar-nav__link.active {
-  background: rgba(52, 211, 153, 0.1);
-  border-color: rgba(52, 211, 153, 0.2);
+  background: rgba(52, 211, 153, 0.14);
+  border-color: rgba(52, 211, 153, 0.28);
 }
 
 .main {
@@ -608,37 +609,37 @@ html[data-theme="dark"] .btn-quick-log {
   }
 
   .sidebar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 0.85rem;
+    padding: 1rem 1rem 1.15rem;
   }
 
   .sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    flex: 1 1 auto;
-    gap: 0.35rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    flex: 0 1 auto;
+    width: 100%;
+    gap: 0.2rem;
   }
 
   .sidebar-nav__link {
-    flex: 1 1 42%;
-    min-width: 7.5rem;
-    margin-bottom: 0;
-    box-shadow: none;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .sidebar-nav__link.active {
-    box-shadow: inset 0 -3px 0 #34d399;
-    border-left-color: transparent;
-    border-right-color: transparent;
-    border-top-color: transparent;
+    box-shadow: inset 3px 0 0 #34d399;
   }
 
   .sidebar-footer {
     width: 100%;
-    margin-top: 0;
-    padding-top: 0;
+    margin-top: 0.5rem;
+    padding-top: 0.35rem;
+    flex-shrink: 0;
   }
 
   .btn-sidebar-logout {

@@ -29,8 +29,9 @@
 .profile-hero-name {
   margin: 0;
   font-size: 1.35rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
 
@@ -47,8 +48,9 @@
 .profile-settings-heading {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--color-text);
 }
 
