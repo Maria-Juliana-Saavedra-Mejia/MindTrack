@@ -165,9 +165,9 @@ def test_entry_routes_serve_same_root_index_html(client):
         assert resp.status_code == 200
         data = resp.content
         assert b'id="login-form"' in data
-        assert b"/frontend/static/js/auth.js" in data
-        assert b"/frontend/static/css/login.css" in data
-        assert b"/frontend/static/images/mindtrack-logo.png" in data
+        assert b"frontend/static/js/auth.js" in data
+        assert b"frontend/static/css/login.css" in data
+        assert b"frontend/static/images/mindtrack-logo.png" in data
 
 
 def test_dashboard_template_renders(client):

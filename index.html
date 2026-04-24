@@ -4,17 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
-      Deployment (e.g. GitHub Pages + API on Render/Fly):
-      1) Set mindtrack-api-base to your public API base (https://your-api.onrender.com) — no /api suffix.
-         Or set window.MINDTRACK_DEFAULT_API in the script below, or one-time ?api=https://... (then saved in localStorage).
-      2) On the API server, set CORS_ORIGINS to this page's origin, e.g. CORS_ORIGINS=https://user.github.io
-         (and FLASK_ENV=production or ENV=production in production). Rebuild/restart the API after.
+      GitHub Pages + API (Render/Fly/etc.):
+      • mindtrack-api-base (or MINDTRACK_DEFAULT_API below): https://your-api.host — no /api suffix; must be https (Pages is https).
+      • On the API: CORS_ORIGINS=https://youruser.github.io (no path), FLASK_ENV=production, JWT_SECRET, Mongo env.
+      • Assets use a computed <base href>; for a custom base, set mindtrack-base-path (e.g. /MyRepo/).
     -->
     <meta name="mindtrack-base-path" content="" />
     <meta name="mindtrack-api-base" content="" />
     <!-- Live Server + API on another port: set the API port here (e.g. 8000 for uvicorn) or use window.MINDTRACK_DEV_API_PORT. If you use python3 run.py, use the port printed in the terminal (often 5050–5059). -->
     <meta name="mindtrack-dev-api-port" content="" />
-    <link rel="icon" type="image/svg+xml" href="/frontend/static/favicon.svg" />
     <title>MindTrack — Login</title>
     <script>
       window.MINDTRACK_DEFAULT_API = "";
@@ -30,22 +28,43 @@
     </script>
     <script>
       (function () {
+        function mindtrackStaticAppRootFromPathname() {
+          var parts = location.pathname.split("/").filter(Boolean);
+          var last = parts.length ? parts[parts.length - 1] : "";
+          if (last === "login" || /\.html?$/i.test(last)) {
+            parts.pop();
+          }
+          if (!parts.length) {
+            return "/";
+          }
+          return "/" + parts.join("/") + "/";
+        }
         var meta = document.querySelector('meta[name="mindtrack-base-path"]');
-        if (meta && meta.getAttribute("content") && String(meta.getAttribute("content")).trim() !== "") {
+        var explicit = meta && meta.getAttribute("content") && String(meta.getAttribute("content")).trim() !== "";
+        if (explicit) {
           window.MINDTRACK_BASE = String(meta.getAttribute("content")).trim().replace(/\/?$/, "/");
         } else {
-          window.MINDTRACK_BASE = "/";
+          window.MINDTRACK_BASE = mindtrackStaticAppRootFromPathname();
+        }
+        var baseEl = document.createElement("base");
+        baseEl.href = window.MINDTRACK_BASE;
+        var charsetMeta = document.head.querySelector("meta[charset]");
+        if (charsetMeta && charsetMeta.insertAdjacentElement) {
+          charsetMeta.insertAdjacentElement("afterend", baseEl);
+        } else {
+          document.head.insertBefore(baseEl, document.head.firstChild);
         }
       })();
     </script>
-    <link rel="stylesheet" href="/frontend/static/css/login.css" />
+    <link rel="icon" type="image/svg+xml" href="frontend/static/favicon.svg" />
+    <link rel="stylesheet" href="frontend/static/css/login.css" />
   </head>
   <body>
     <div class="auth-shell">
       <div class="brand-panel">
         <div>
           <div class="brand-logo-wrap">
-            <img src="/frontend/static/images/mindtrack-logo.png" alt="MindTrack" class="brand-logo" width="320" />
+            <img src="frontend/static/images/mindtrack-logo.png" alt="MindTrack" class="brand-logo" width="320" />
           </div>
           <p class="tagline">Build habits. Track progress. Stay consistent.</p>
         </div>
@@ -108,7 +127,7 @@
         </div>
       </div>
     </div>
-    <script src="/frontend/static/js/api.js"></script>
-    <script src="/frontend/static/js/auth.js"></script>
+    <script src="frontend/static/js/api.js"></script>
+    <script src="frontend/static/js/auth.js"></script>
   </body>
 </html>
