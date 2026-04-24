@@ -235,7 +235,7 @@ flake8 backend/app backend/tests --max-line-length=100 --extend-ignore=E501
 pytest -v --cov=app --cov-report=term-missing --cov-fail-under=70
 ```
 
-CI runs the same checks on pushes and pull requests to `main` (see `.github/workflows/ci.yml`).
+CI runs **lint** on every push and PR to `main`, and **tests** when the workflow can use repository secrets (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Configure **`MONGO_URI`** under **Settings → Secrets and variables → Actions** (same style as local `.env`: must start with **`mongodb+srv://`** or **`mongodb://`**). Fork PRs do not receive secrets, so only the lint job runs there unless you adjust the workflow.
 
 ## Health check
 

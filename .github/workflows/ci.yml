@@ -1,4 +1,7 @@
 # .github/workflows/ci.yml
+# Tests need repository secret MONGO_URI (mongodb+srv://user:pass@host/…).
+# Settings → Secrets and variables → Actions → New repository secret → MONGO_URI
+# Fork PRs do not receive secrets; only lint runs there unless you use another strategy.
 name: CI
 
 on:
@@ -8,11 +11,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
-    env:
-      MONGO_URI: ongodb+srv://juli:so72rROmGG4oSg3H@cluster0.tkzhljx.mongodb.net/
-      MONGO_DB_NAME: mindtrack_db
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.11
@@ -24,6 +24,38 @@ jobs:
         run: pip install -r requirements.txt
       - name: Lint with flake8
         run: flake8 backend/app backend/fapi backend/tests --max-line-length=100 --extend-ignore=E501
+
+  test:
+    needs: lint
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_DB_NAME: mindtrack_db
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify MONGO_URI secret
+        run: |
+          if [ -z "$MONGO_URI" ]; then
+            echo "::error::Set the MONGO_URI repository secret (Actions → Secrets and variables → Actions). Use mongodb+srv://… (not ongodb)."
+            exit 1
+          fi
+          case "$MONGO_URI" in
+            mongodb+srv://*|mongodb://*) ;;
+            *)
+              echo "::error::MONGO_URI must start with mongodb+srv:// or mongodb://"
+              exit 1
+              ;;
+          esac
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Run tests
         run: |
           pytest -v --tb=short --cov=app --cov-report=term-missing --cov-fail-under=70
