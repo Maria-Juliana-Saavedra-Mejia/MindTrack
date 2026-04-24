@@ -225,25 +225,29 @@ html[data-theme="dark"] .kpi-card {
 .kpi-card h3 {
   margin: 0 0 0.35rem;
   color: var(--color-muted);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .kpi-card .value {
+  font-family: var(--font-body);
   font-size: 2.15rem;
   font-weight: 700;
   color: var(--color-primary);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
 }
 
 .chart-card__title {
   margin: 0 0 1rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
 }
 
 .chart-wrap {
@@ -319,7 +323,10 @@ html[data-theme="dark"] .kpi-card {
 
 .ai-title {
   margin: 0;
+  font-family: var(--font-body);
   font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
 
@@ -444,6 +451,7 @@ html[data-theme="dark"] .insight-block.tip .insight-icon {
 
 .insight-block h4 {
   margin: 0 0 0.45rem;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -453,6 +461,7 @@ html[data-theme="dark"] .insight-block.tip .insight-icon {
 
 .insight-block p {
   margin: 0;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   line-height: 1.55;
   color: var(--color-text);
@@ -491,7 +500,11 @@ html[data-theme="dark"] .insight-error {
 
 .quick-log-title {
   margin: 0 0 0.35rem;
+  font-family: var(--font-body);
   font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
 .quick-log-sub {
@@ -726,6 +739,22 @@ html[data-theme="dark"] .btn-quick-log {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.75rem;
+}
+
+.calendar-header h3 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.modal-card h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
 .calendar-grid {

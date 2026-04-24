@@ -1,10 +1,169 @@
 /* static/css/habits.css */
 @import url("dashboard.css");
 
+.habits-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.habits-toolbar-label {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.habits-layout-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.habits-layout-btn {
+  font-family: var(--font-body);
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.habits-layout-btn:hover {
+  color: var(--color-text);
+  background: rgba(5, 150, 105, 0.08);
+}
+
+.habits-layout-btn.is-active {
+  background: var(--color-card);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-theme="dark"] .habits-layout-btn.is-active {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
 .habit-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Default / comfortable: larger cards */
+.habit-grid--comfortable {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+.habit-grid--comfortable .habit-card {
+  padding: 1.35rem 1.45rem;
+}
+
+.habit-grid--comfortable .habit-card-icon {
+  font-size: 2.25rem;
+}
+
+.habit-grid--comfortable .habit-card-title-row h3 {
+  font-size: 1.25rem;
+}
+
+.habit-grid--comfortable .habit-desc {
+  font-size: 0.95rem;
+}
+
+.habit-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1rem;
+}
+
+.habit-grid--compact .habit-card {
+  padding: 1rem;
+}
+
+.habit-grid--compact .habit-card-icon {
+  font-size: 1.75rem;
+}
+
+.habit-grid--compact .habit-card-title-row h3 {
+  font-size: 1.05rem;
+}
+
+/* List: full-width rows, horizontal scan */
+.habit-grid--list {
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.habit-grid--list .habit-card {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.habit-grid--list .habit-card .swatch {
+  width: 6px;
+  min-height: 3.5rem;
+  height: auto;
+  align-self: stretch;
+  margin: 0;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.habit-grid--list .habit-card-head {
+  flex: 1 1 12rem;
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.habit-grid--list .habit-stats {
+  flex: 1 1 100%;
+  margin-top: 0;
+}
+
+@media (min-width: 720px) {
+  .habit-grid--list .habit-card {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .habit-grid--list .habit-stats {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+    min-width: 11rem;
+  }
+
+  .habit-grid--list .habit-card .actions {
+    flex: 0 0 auto;
+    margin-top: 0;
+    margin-left: auto;
+  }
+}
+
+.habit-drawer-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
 .habit-card {
@@ -165,8 +324,11 @@ html[data-theme="dark"] .drawer {
 
 .habit-card-title-row h3 {
   margin: 0;
+  font-family: var(--font-body);
   font-size: 1.05rem;
+  font-weight: 600;
   line-height: 1.25;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
 

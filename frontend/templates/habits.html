@@ -7,12 +7,22 @@
 {% block page_title %}Habits{% endblock %}
 {% block page_tagline %}Design habits that feel good—and keep showing up.{% endblock %}
 {% block content %}
-<div id="habit-list" class="habit-grid"></div>
+<div class="habits-toolbar">
+  <span class="habits-toolbar-label">Layout</span>
+  <div class="habits-layout-pills" role="group" aria-label="Habit card layout">
+    <button type="button" class="habits-layout-btn is-active" data-layout="comfortable">
+      Comfortable
+    </button>
+    <button type="button" class="habits-layout-btn" data-layout="compact">Compact</button>
+    <button type="button" class="habits-layout-btn" data-layout="list">List</button>
+  </div>
+</div>
+<div id="habit-list" class="habit-grid habit-grid--comfortable"></div>
 <button class="fab" id="fab" type="button" aria-label="Add habit">+</button>
 <div class="drawer-overlay" id="drawer-overlay"></div>
 <div class="drawer" id="drawer">
   <div style="display: flex; justify-content: space-between; align-items: center">
-    <h3 id="drawer-title" style="margin: 0">New habit</h3>
+    <h3 id="drawer-title" class="habit-drawer-title" style="margin: 0">New habit</h3>
     <button class="btn-ghost" type="button" id="close-drawer">Close</button>
   </div>
   <form id="habit-form" class="form-grid">

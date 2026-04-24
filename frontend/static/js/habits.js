@@ -23,6 +23,46 @@ const form = document.getElementById("habit-form");
 const title = document.getElementById("drawer-title");
 let editingId = null;
 
+const HABIT_LAYOUT_KEY = "mindtrack_habits_layout";
+const HABIT_LAYOUTS = ["comfortable", "compact", "list"];
+
+function getHabitLayout() {
+  try {
+    const v = localStorage.getItem(HABIT_LAYOUT_KEY);
+    if (HABIT_LAYOUTS.includes(v)) {
+      return v;
+    }
+  } catch (e) {
+    /* */
+  }
+  return "comfortable";
+}
+
+function applyHabitLayout(layout) {
+  if (!habitList || !HABIT_LAYOUTS.includes(layout)) {
+    return;
+  }
+  habitList.classList.remove("habit-grid--comfortable", "habit-grid--compact", "habit-grid--list");
+  habitList.classList.add(`habit-grid--${layout}`);
+  document.querySelectorAll(".habits-layout-btn").forEach((btn) => {
+    const isSel = btn.getAttribute("data-layout") === layout;
+    btn.classList.toggle("is-active", isSel);
+    btn.setAttribute("aria-pressed", isSel ? "true" : "false");
+  });
+  try {
+    localStorage.setItem(HABIT_LAYOUT_KEY, layout);
+  } catch (e) {
+    /* */
+  }
+}
+
+document.querySelectorAll(".habits-layout-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    applyHabitLayout(btn.getAttribute("data-layout") || "comfortable");
+  });
+});
+applyHabitLayout(getHabitLayout());
+
 const emojiChoices = ["🎯", "🏃", "📚", "💧", "🧘", "💤", "🌿", "⭐"];
 const emojiGrid = document.getElementById("emoji-grid");
 emojiChoices.forEach((emo) => {
