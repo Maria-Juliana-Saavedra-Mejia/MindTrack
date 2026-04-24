@@ -1,96 +1,75 @@
 ---
-title: MindTrack Product Requirements
-description: Product requirements aligned with the shipped MindTrack application
+description: Product requirements for MindTrack (habit tracking for students and professionals).
 ---
 
 # MindTrack — Product Requirements
 
-## Vision
+## Summary
 
-MindTrack helps students and young professionals build consistency: one place to define habits, log progress, see streaks and trends, and get occasional AI encouragement grounded in their own data.
+MindTrack is a habit-tracking web application: users register and sign in, create habits, log completions, view streaks and charts on a dashboard, browse a monthly activity calendar, and optionally receive short AI-generated coaching notes from recent activity data.
 
-## Problem
+## Goals
 
-People often abandon habits because progress is invisible, logging is tedious, and motivation drops when there is no feedback loop. Spreadsheets and generic reminders do not tie habits, history, and gentle coaching together.
-
-## Solution
-
-A browser-based application with a clear login experience, habit management, fast logging (including one-tap completion on the dashboard), visual summaries (charts and calendar), and optional AI-generated insights based on recent activity.
+- **Primary:** Help users build consistency on personal habits through simple logging and visible progress (streaks, charts, calendar).
+- **Secondary:** Offer lightweight motivational feedback via optional AI insights when an API key is configured.
+- **Deployment:** Support local development (single process + MongoDB), optional GitHub Pages for static UI with a separately hosted API, and clear documentation for environment and CI.
 
 ## Target users
 
-- University students balancing study, health, and wellbeing routines.
-- Early-career professionals building productivity and mindfulness habits.
-- Anyone who prefers a lightweight web app over installing native clients.
+- **Students** — juggling coursework and wellbeing routines; need low-friction daily/weekly logging.
+- **Young professionals** — recurring productivity and health habits; value dashboard overview and streak motivation.
 
-## In-scope features (implemented)
+## User stories (must-have)
 
-**Authentication**
+1. As a new user, I can register with email and password and land in an authenticated experience.
+2. As a returning user, I can sign in (optional "remember me") and stay signed in on a trusted device.
+3. As a signed-in user, I can create, edit, and delete habits (name, frequency, category, color, icon).
+4. As a signed-in user, I can log completions for today's habits quickly from the dashboard.
+5. As a signed-in user, I can see aggregate stats (active habits, today's completions, longest streak) and a recent completion chart.
+6. As a signed-in user, I can open a month view of activity and inspect or remove entries for a day.
+7. As a signed-in user, I can sign out and clear the session in the browser.
 
-- Register with full name, email, and password (client and server validation).
-- Login with JWT stored in the browser; logout clears client session.
-- Protected API routes require a valid Bearer token.
+## User stories (should-have)
 
-**Habits**
+8. As a signed-in user, I can refresh or view AI coach insights derived from my recent habits and logs when the backend is configured with a model provider key.
+9. As a developer, I can run the API and static UI from one entrypoint with documented `.env` (MongoDB only for local DB config).
 
-- Create, list, read, update, and delete habits per user.
-- Fields include name, description, frequency (daily or weekly), category, color, emoji icon, active flag.
+## Non-goals (current scope)
 
-**Logging**
+- Native mobile apps (responsive web only).
+- Team/shared habits or social feeds.
+- Push notifications or email reminders as a shipped product feature (preferences fields may exist without full delivery).
+- Payment, subscriptions, or multi-tenant admin consoles.
 
-- Log a completion for a habit with optional note.
-- List logs with filters (habit, date range).
-- Delete a log entry.
-- Streak calculation from consecutive calendar days with logs.
-- Summary of completion rates over the last 30 days per habit.
+## Functional requirements
 
-**Dashboard**
-
-- KPI cards: active habits, today’s completions, longest current streak.
-- Line chart of daily completions over the last 30 days (Chart.js).
-- AI insight card: compliment, observation, tip; refresh triggers a new generation.
-- Quick log list for today’s habits with checkmark actions.
-
-**Calendar log view**
-
-- Month grid with per-day indicators for completed habits.
-- Day modal listing logs with delete.
-
-**Non-user-facing**
-
-- Structured logging to console and rotating file.
-- JSON error responses with consistent shape for API errors.
-- GitHub Actions: lint, tests, minimum code coverage.
-
-**Tech stack (fixed)**
-
-- Backend: Python 3.11, FastAPI + Uvicorn (`python run.py`), PyMongo, PyJWT, OpenAI Python SDK (`gpt-4o-mini`). Legacy Flask factory remains in-repo for tests/utilities.
-- Frontend: HTML5, CSS3, vanilla JavaScript; Chart.js via CDN.
-- Database: MongoDB.
-- Tests: pytest, pytest-mock, pytest-cov; flake8 for lint.
-
-## Configuration model
-
-- End users copy `.env.example` to `.env` and supply **only** `MONGO_URI` and `MONGO_DB_NAME`.
-- JWT and OpenAI keys are intended to be supplied by the **deployment environment** in production; development may use application defaults documented in the repository README.
+| Area | Requirement |
+|------|-------------|
+| Auth | Register, login, logout, session via JWT bearer; password storage uses bcrypt for new accounts; legacy plain `password` tolerated until migration. |
+| Habits | CRUD per user; categories and frequencies as implemented in API and UI. |
+| Logs | Create logs linked to habit and user; delete; summaries and streaks exposed via API for dashboard and log views. |
+| AI | Insights endpoint and generate flow; graceful degradation when keys are missing. |
+| Static hosting | Root `index.html` and `frontend/static` paths work on GitHub Pages with configurable API base (`mindtrack-api.json`, query params, or meta as documented). |
 
 ## Non-functional requirements
 
-- **Security**: **Demo / local builds store passwords as plain text in MongoDB** (no bcrypt); login compares the submitted password to the stored string. Production deployments must replace this with password hashing and other hardening. JWT for API auth; HTTPS expected in production deployments.
-- **Usability**: Responsive layout for mobile and desktop; accessible form labels and inline validation on the login/register page.
-- **Reliability**: API errors return JSON with message and status; server-side logging for troubleshooting.
-- **Maintainability**: Automated tests and CI gate on coverage threshold.
+- **Security:** HTTPS for production API; CORS configured for known UI origins; no secrets committed; production JWT secret and provider keys via host environment, not only `.env` placeholders.
+- **Reliability:** Health endpoint reflects readiness when MongoDB is reachable; CI runs lint on every PR; tests run when `MONGO_URI` is available as an Actions secret (same-repo PRs/pushes).
+- **Observability:** Structured errors on API where appropriate; developers can verify with `/health` and Compass against `MONGO_URI` / `MONGO_DB_NAME`.
 
-## Out of scope (current product)
+## Data model (high level)
 
-- Native iOS or Android apps.
-- Social login (OAuth / Google / Apple).
-- Multi-tenant organizations, teams, or shared workspaces.
-- Server-side session stores or JWT revocation lists (tokens are stateless until expiry).
-- Offline-first or sync across devices beyond what the browser provides.
+MongoDB database named by `MONGO_DB_NAME`: `users`, `habits`, `habit_logs`, `ai_insights` (see README.md for field-level expectations).
 
-## Future work (ideas)
+## Success criteria
 
-- Email or push reminders based on user preferences.
-- Export data (CSV/JSON).
-- Stronger production secret management (e.g. vault integration).
+- A new developer can follow README.md quick start, run tests locally, and understand why GitHub Actions skips or runs the test job.
+- Core flows (register, habit, log, dashboard/log views, logout) work against a valid MongoDB deployment.
+
+## References in repo
+
+- README.md — setup, troubleshooting, Pages, API overview.
+- .github/workflows/ci.yml — lint and test gates, `MONGO_URI` secret.
+- backend/fapi/ — FastAPI application and routers.
+- frontend/static/ — client scripts and styles.
+- index.html — entry and dev API port hints.

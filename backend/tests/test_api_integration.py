@@ -286,7 +286,6 @@ def test_habits_requires_auth(client):
     assert resp.status_code == 401
 
 
-
 def test_register_password_too_short_returns_422(client):
     resp = client.post(
         "/api/auth/register",

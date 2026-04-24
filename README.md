@@ -231,11 +231,15 @@ All protected routes expect `Authorization: Bearer <token>` (token returned on l
 
 ```bash
 source .venv/bin/activate
-flake8 backend/app backend/tests --max-line-length=100 --extend-ignore=E501
+flake8 backend/app backend/fapi backend/tests --max-line-length=100 --extend-ignore=E501
 pytest -v --cov=app --cov-report=term-missing --cov-fail-under=70
 ```
 
 CI runs **lint** on every push and PR to `main`, and **tests** when the workflow can use repository secrets (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Configure **`MONGO_URI`** under **Settings → Secrets and variables → Actions** (same style as local `.env`: must start with **`mongodb+srv://`** or **`mongodb://`**). Fork PRs do not receive secrets, so only the lint job runs there unless you adjust the workflow.
+
+**If GitHub shows “test: Skipped”:** the **test** job **`needs: lint`**. When **lint** fails (for example **flake8** errors in `backend/tests` or `backend/fapi`), **test** is skipped automatically—it does not mean tests are broken. Fix lint locally with the same **`flake8`** command as above, then push again. When **lint** passes but **test** still does not run on a PR from a **fork**, that is expected unless you change the workflow or use same-repo branches. When **test** runs and fails, check the **`MONGO_URI`** secret and that the URI scheme is **`mongodb`** (not a typo like **`ongodb`**).
+
+Product goals and scope are summarized in **[`PRD.mdc`](PRD.mdc)**.
 
 ## Health check
 
