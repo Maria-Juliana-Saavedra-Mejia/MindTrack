@@ -8,6 +8,36 @@ from bson import ObjectId
 from openai import OpenAI
 
 
+def _format_generated_at(value):
+    """Mongo may store UTC datetimes; tolerate legacy string values."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    iso = getattr(value, "isoformat", None)
+    if callable(iso):
+        return iso()
+    return str(value)
+
+
+def _coerce_utc_datetime(value):
+    """Normalize habit log timestamps for streak and coverage math."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    elif isinstance(value, str):
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    else:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 class AIService:
     """Generates and retrieves AI insights."""
 
@@ -95,12 +125,10 @@ class AIService:
             )
             days = set()
             for lg in logs:
-                dt = lg.get("logged_at")
+                dt = _coerce_utc_datetime(lg.get("logged_at"))
                 if not dt:
                     continue
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                days.add(dt.astimezone(timezone.utc).date())
+                days.add(dt.date())
             rate = round((len(days) / window_days) * 100, 2)
             completion_parts.append(f"{name}: {rate}% active-day coverage")
             streak = self._calculate_streak_for_habit(hid)
@@ -145,7 +173,12 @@ class AIService:
                 {"role": "user", "content": user_prompt},
             ],
         )
-        content = response.choices[0].message.content or "{}"
+        choices = getattr(response, "choices", None) or []
+        if not choices:
+            raise ValueError("AI returned no completion")
+        msg = getattr(choices[0], "message", None)
+        raw_content = getattr(msg, "content", None) if msg is not None else None
+        content = (raw_content if isinstance(raw_content, str) else None) or "{}"
         data = json.loads(content)
         compliment = data.get("compliment", "")
         observation = data.get("observation", "")
@@ -189,9 +222,7 @@ class AIService:
             "compliment": doc.get("compliment"),
             "observation": doc.get("observation"),
             "tip": doc.get("tip"),
-            "generated_at": doc.get("generated_at").isoformat()
-            if doc.get("generated_at")
-            else None,
+            "generated_at": _format_generated_at(doc.get("generated_at")),
             "insight_type": doc.get("insight_type"),
             "habits_analyzed": [str(h) for h in doc.get("habits_analyzed", [])],
         }
@@ -200,12 +231,10 @@ class AIService:
         logs = self._logs.find({"habit_id": habit_id}).sort("logged_at", -1)
         dates = []
         for log in logs:
-            dt = log.get("logged_at")
+            dt = _coerce_utc_datetime(log.get("logged_at"))
             if not dt:
                 continue
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            dates.append(dt.astimezone(timezone.utc).date())
+            dates.append(dt.date())
         unique_sorted = sorted(set(dates), reverse=True)
         if not unique_sorted:
             return 0

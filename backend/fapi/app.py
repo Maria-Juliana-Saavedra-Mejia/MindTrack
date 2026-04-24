@@ -171,7 +171,11 @@ def build_app() -> FastAPI:
 
     def _safe_template_response(request: Request, template_name: str):
         try:
-            return _templates.TemplateResponse(request, template_name)
+            return _templates.TemplateResponse(
+                request,
+                template_name,
+                {"mindtrack_http_port": _effective_listen_port(request)},
+            )
         except Exception as exc:
             _page_log.exception("Template render failed: %s", template_name)
             if Config._runtime_env_name() != "production":

@@ -43,6 +43,39 @@ def test_seed_starter_skips_when_not_first_log(ai_service, mock_db, sample_user_
     assert out is None
 
 
+def test_generate_insights_accepts_iso_string_logged_at(ai_service, mock_db, sample_user_dict):
+    """Mongo or imports may surface log times as ISO strings; generation must not crash."""
+    habits = mock_db["habits"]
+    logs = mock_db["habit_logs"]
+    insights = mock_db["ai_insights"]
+    habit_id = ObjectId()
+    logs.count_documents.return_value = 5
+    habits.find.return_value = [
+        {
+            "_id": habit_id,
+            "name": "Run",
+            "category": "health",
+            "user_id": sample_user_dict["_id"],
+            "is_active": True,
+        }
+    ]
+    logs.find.return_value = FakeCursor(
+        [{"logged_at": "2024-01-05T12:00:00+00:00"}]
+    )
+    ai_service._client.chat.completions.create.return_value = MagicMock(
+        choices=[
+            MagicMock(
+                message=MagicMock(
+                    content='{"compliment":"A","observation":"B","tip":"C"}'
+                )
+            )
+        ]
+    )
+    result = ai_service.generate_insights(str(sample_user_dict["_id"]))
+    assert result["compliment"] == "A"
+    insights.insert_one.assert_called_once()
+
+
 def test_generate_insights_calls_openai(ai_service, mock_db, sample_user_dict):
     habits = mock_db["habits"]
     logs = mock_db["habit_logs"]
@@ -96,3 +129,18 @@ def test_get_latest_insights_returns_recent(ai_service, mock_db, sample_user_dic
     latest = ai_service.get_latest_insights(str(sample_user_dict["_id"]))
     assert latest["compliment"] == "Great"
     insights.find_one.assert_called_once()
+
+
+def test_get_latest_insights_string_generated_at(ai_service, mock_db, sample_user_dict):
+    insights = mock_db["ai_insights"]
+    iso = "2024-01-01T00:00:00+00:00"
+    insights.find_one.return_value = {
+        "compliment": "x",
+        "observation": "y",
+        "tip": "z",
+        "generated_at": iso,
+        "insight_type": "starter",
+        "habits_analyzed": [],
+    }
+    latest = ai_service.get_latest_insights(str(sample_user_dict["_id"]))
+    assert latest["generated_at"] == iso

@@ -36,8 +36,9 @@
 })();
 
 /** Fixed local API base when not using explicit meta/window/?api overrides (no port probing).
- * Backend may listen as 0.0.0.0:5052 — browsers must use http://127.0.0.1:5052 (not http://0.0.0.0/…). */
-const MINDTRACK_FIXED_LOCAL_API_BASE = "http://127.0.0.1:5052";
+ * Must match run.py's first choice (5050–5059); run.py binds the first free port in that range.
+ * Override per-machine: meta mindtrack-dev-api-port, window.MINDTRACK_DEV_API_PORT, or ?mt_api_port=. */
+const MINDTRACK_FIXED_LOCAL_API_BASE = "http://127.0.0.1:5050";
 
 /**
  * API base (no trailing slash), first match wins:
@@ -47,7 +48,7 @@ const MINDTRACK_FIXED_LOCAL_API_BASE = "http://127.0.0.1:5052";
  * - ?mt_api_port=5051 on loopback — shorthand for ?api=http://127.0.0.1:5051 (Live Server + run.py)
  * - localStorage mindtrack_api_base (ignored if stale: another 5050–5059 slot than the current page)
  * - Local dev on loopback with another port (e.g. Live Server) -> MINDTRACK_FIXED_LOCAL_API_BASE.
- *   If the page is already on the same origin as that base (run.py on 5052, etc.), relative /api calls are used.
+ *   If the page is already on the same origin as that base (run.py on 5050, etc.), relative /api calls are used.
  * Deploy: set meta or MINDTRACK_DEFAULT_API to your deployed API; ensure CORS_ORIGINS on the server
  * includes your static site's origin (see backend app config / env).
  */
@@ -275,6 +276,80 @@ function _isLoopbackUrlInPrimaryUnifiedRange(normalizedBase) {
   }
 }
 
+/**
+ * Loopback URL for the local FastAPI dev server (run.py 5050–5059).
+ * window.MINDTRACK_DEV_API_PORT wins; else meta mindtrack-dev-api-port (injected in base.html);
+ * else MINDTRACK_FIXED_LOCAL_API_BASE.
+ */
+function _computeMindtrackLocalDevApiBase() {
+  let fixed = MINDTRACK_FIXED_LOCAL_API_BASE;
+  try {
+    const wdp =
+      typeof window !== "undefined" && window.MINDTRACK_DEV_API_PORT != null
+        ? String(window.MINDTRACK_DEV_API_PORT).trim()
+        : "";
+    if (wdp && /^\d+$/.test(wdp)) {
+      const pn = parseInt(wdp, 10);
+      if (!Number.isNaN(pn) && pn >= 1 && pn <= 65535) {
+        fixed = "http://127.0.0.1:" + pn;
+      }
+    } else {
+      const dm = document.querySelector('meta[name="mindtrack-dev-api-port"]');
+      const metaPort =
+        dm && dm.getAttribute("content")
+          ? String(dm.getAttribute("content")).trim()
+          : "";
+      if (metaPort && /^\d+$/.test(metaPort)) {
+        const pn = parseInt(metaPort, 10);
+        if (!Number.isNaN(pn) && pn >= 1 && pn <= 65535) {
+          fixed = "http://127.0.0.1:" + pn;
+        }
+      }
+    }
+  } catch (e) {
+    /* */
+  }
+  return fixed;
+}
+
+/**
+ * When the page is on Live Server (etc.), not on 5050–5059, a saved mindtrack_api_base
+ * like http://127.0.0.1:5052 is never cleared by unified-slot stale rules — drop it if it
+ * disagrees with meta/window/default so fetch targets the real run.py port.
+ */
+function _invalidateWrongUnifiedPortMindtrackStorage(ph, pp, storedBase) {
+  if (!_isLoopbackHost(ph) || !storedBase) {
+    return false;
+  }
+  if (!_isLoopbackUrlInPrimaryUnifiedRange(storedBase)) {
+    return false;
+  }
+  const pagePn = pp === "" ? NaN : parseInt(pp, 10);
+  const onDirectMindtrackPort =
+    pp !== "" &&
+    !Number.isNaN(pagePn) &&
+    pagePn >= 5050 &&
+    pagePn <= 5059;
+  if (onDirectMindtrackPort) {
+    return false;
+  }
+  try {
+    const have = new URL(storedBase);
+    const prefer = new URL(_computeMindtrackLocalDevApiBase());
+    if (String(have.port || "") !== String(prefer.port || "")) {
+      try {
+        localStorage.removeItem("mindtrack_api_base");
+      } catch (e) {
+        /* private mode */
+      }
+      return true;
+    }
+  } catch (e) {
+    /* */
+  }
+  return false;
+}
+
 /** Set localStorage mindtrack_debug_api=1, or ?mt_debug_api=1, or window.MINDTRACK_DEBUG_API=true to log every API request. */
 function mindtrackApiDebugEnabled() {
   try {
@@ -431,7 +506,11 @@ function getApiBase() {
           /* private mode */
         }
       } else {
-        return _finalizeMindtrackApiBase(b, true);
+        if (_invalidateWrongUnifiedPortMindtrackStorage(ph, pp, b)) {
+          /* cleared stale pin; fall through to _computeMindtrackLocalDevApiBase() */
+        } else {
+          return _finalizeMindtrackApiBase(b, true);
+        }
       }
     }
   } catch (e) {
@@ -441,7 +520,7 @@ function getApiBase() {
   const p = String(window.location.port || "");
   const isLoopback =
     h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "0.0.0.0";
-  const fixed = MINDTRACK_FIXED_LOCAL_API_BASE;
+  const fixed = _computeMindtrackLocalDevApiBase();
   const pagePortNum = parseInt(p, 10);
   const onMindtrackUnifiedPort =
     p !== "" &&
@@ -452,7 +531,7 @@ function getApiBase() {
   if (isLoopback && onMindtrackUnifiedPort) {
     return "";
   }
-  /* Same origin as fixed API (e.g. http://127.0.0.1:5052 — also when hostname is 0.0.0.0). */
+  /* Same origin as fixed API (e.g. http://127.0.0.1:5050 — also when hostname is 0.0.0.0). */
   if (isLoopback && p) {
     try {
       if (
@@ -602,13 +681,14 @@ async function apiFetch(endpoint, method = "GET", body = null) {
       hintIfPort5000MacOS:
         String(url).indexOf(":5000") >= 0
           ? "macOS often serves AirPlay on :5000 (not your API). Expected API: " +
-            MINDTRACK_FIXED_LOCAL_API_BASE +
+            _computeMindtrackLocalDevApiBase() +
             "."
           : undefined,
     });
     const health = String(url).replace(/\/api\/.*$/, "/health");
+    const tryBase = _computeMindtrackLocalDevApiBase();
     throw new Error(
-      "Could not reach the API: " + url + ". 1) Start FastAPI at " + MINDTRACK_FIXED_LOCAL_API_BASE + " (e.g. uvicorn). " +
+      "Could not reach the API: " + url + ". 1) Start FastAPI at " + tryBase + " (e.g. uvicorn). " +
         "2) Open " + health + " in the browser. " +
         "3) Mixed content: an https:// page cannot fetch an http:// API — open the UI over http:// or use HTTPS for both. " +
         "(On an http:// page, a saved https:// API on loopback :5050–5059 may be rewritten to http:// automatically.)",

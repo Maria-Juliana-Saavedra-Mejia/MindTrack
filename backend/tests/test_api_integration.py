@@ -123,6 +123,21 @@ def test_index_html_injects_dev_api_port_meta_from_request_url(mongo_stub, monke
     assert 'name="mindtrack-dev-api-port"' in body
 
 
+def test_dashboard_template_injects_dev_api_port_meta(mongo_stub, monkeypatch):
+    """Jinja base.html exposes listen port so api.js matches run.py when UI is on /dashboard."""
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5099") as c:
+        r = c.get("/dashboard")
+    assert r.status_code == 200
+    assert 'name="mindtrack-dev-api-port"' in r.text
+    assert 'content="5099"' in r.text
+
+
 def test_favicon_reachable(client):
     resp = client.get("/favicon.ico")
     assert resp.status_code == 200
@@ -434,6 +449,44 @@ def test_ai_generate_validation(client, mongo_stub):
         "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
     )
     assert resp.status_code == 400
+
+
+def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):
+    from openai import AuthenticationError
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Run",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 5
+    logs.find.return_value = FakeCursor([])
+    token = _token(client, uid)
+
+    def boom(*_a, **_kw):
+        raise AuthenticationError("bad", response=MagicMock(), body=None)
+
+    monkeypatch.setattr(
+        client.app.state.ai_service._client.chat.completions,
+        "create",
+        boom,
+    )
+    resp = client.post(
+        "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 502
+    body = resp.json()
+    assert body.get("error") is True
+    assert "message" in body
+    assert "OPENAI_API_KEY" in body["message"]
 
 
 def test_create_log(client, mongo_stub):

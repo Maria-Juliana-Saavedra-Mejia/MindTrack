@@ -13,7 +13,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fapi.app import build_app
+try:
+    from fapi.app import build_app
+except ModuleNotFoundError as exc:
+    if os.name == "nt":
+        _venv_python = os.path.join(_ROOT, ".venv", "Scripts", "python.exe")
+    else:
+        _venv_python = os.path.join(_ROOT, ".venv", "bin", "python")
+    print(
+        "\nMindTrack: this Python does not have the project dependencies "
+        f"({exc.name!r} is missing).\n"
+        "  From the repo root, run with the virtualenv:\n"
+        f"    {_venv_python} run.py\n"
+        "  Or activate and install once:\n"
+        "    source .venv/bin/activate\n"
+        "    pip install -r requirements.txt\n"
+        "    python run.py\n"
+        "  If .venv does not exist yet:\n"
+        "    python3 -m venv .venv && .venv/bin/pip install -r requirements.txt\n",
+        file=sys.stderr,
+    )
+    raise SystemExit(1) from exc
 
 app = build_app()
 
