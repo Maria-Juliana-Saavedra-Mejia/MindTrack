@@ -27,20 +27,23 @@
   <body>
     <div class="layout">
       <aside class="sidebar">
-        <div class="logo">
-          <img
-            src="/static/images/mindtrack-logo.png"
-            alt="MindTrack"
-            class="app-logo"
-            width="200"
-          />
-        </div>
+        <a href="/profile" class="sidebar-logo-link" aria-label="Profile and settings">
+          <div class="logo">
+            <img
+              src="/static/images/mindtrack-logo.png"
+              alt=""
+              class="app-logo"
+              width="200"
+            />
+          </div>
+        </a>
         <nav>
           <a href="/dashboard" class="{{ 'active' if request.path == '/dashboard' else '' }}"
             >Dashboard</a
           >
           <a href="/habits" class="{{ 'active' if request.path == '/habits' else '' }}">Habits</a>
           <a href="/log" class="{{ 'active' if request.path == '/log' else '' }}">Log</a>
+          <a href="/profile" class="{{ 'active' if request.path == '/profile' else '' }}">Profile</a>
         </nav>
         <button class="btn-ghost" id="logout-btn" style="color: #fff; border-color: #ffffff55">
           Logout
@@ -48,11 +51,14 @@
       </aside>
       <div class="main">
         <header class="topbar">
-          <div>
-            <div class="page-title" style="font-size: 1.4rem">{% block page_title %}MindTrack{% endblock %}</div>
-            <div style="color: #6b7280" id="user-name">User</div>
+          <div class="topbar-left">
+            <div class="page-title">{% block page_title %}MindTrack{% endblock %}</div>
+            <p class="page-tagline">{% block page_tagline %}{% endblock %}</p>
           </div>
-          <div class="avatar" id="user-initials">MT</div>
+          <a href="/profile" class="topbar-profile-link" id="topbar-profile-link" aria-label="Open profile and settings">
+            <span class="topbar-profile-name" id="user-name">User</span>
+            <span class="avatar" id="user-initials">MT</span>
+          </a>
         </header>
         <main class="content">{% block content %}{% endblock %}</main>
       </div>

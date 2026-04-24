@@ -20,11 +20,35 @@ def ai_service(mock_db, monkeypatch):
     return service
 
 
+def test_seed_starter_insight_after_first_log(ai_service, mock_db, sample_user_dict):
+    logs = mock_db["habit_logs"]
+    insights = mock_db["ai_insights"]
+    logs.count_documents.return_value = 1
+    insights.find_one.return_value = None
+    out = ai_service.seed_starter_insight_after_first_log(
+        str(sample_user_dict["_id"]), "Morning run"
+    )
+    assert out is not None
+    assert "Morning run" in out["compliment"]
+    assert out["insight_type"] == "starter"
+    insights.insert_one.assert_called_once()
+
+
+def test_seed_starter_skips_when_not_first_log(ai_service, mock_db, sample_user_dict):
+    logs = mock_db["habit_logs"]
+    logs.count_documents.return_value = 3
+    out = ai_service.seed_starter_insight_after_first_log(
+        str(sample_user_dict["_id"]), "Run"
+    )
+    assert out is None
+
+
 def test_generate_insights_calls_openai(ai_service, mock_db, sample_user_dict):
     habits = mock_db["habits"]
     logs = mock_db["habit_logs"]
     insights = mock_db["ai_insights"]
     habit_id = ObjectId()
+    logs.count_documents.return_value = 50
     habits.find.return_value = [
         {
             "_id": habit_id,
@@ -54,6 +78,7 @@ def test_generate_insights_calls_openai(ai_service, mock_db, sample_user_dict):
     insights.insert_one.assert_called_once()
     inserted = insights.insert_one.call_args[0][0]
     assert inserted["compliment"] == "Nice"
+    assert inserted["insight_type"] == "suggestion"
     assert inserted["observation"] == "Gap"
     assert inserted["tip"] == "Plan"
 

@@ -18,14 +18,62 @@ class AIService:
         self._insights = db["ai_insights"]
         self._client = OpenAI(api_key=openai_api_key)
 
+    def seed_starter_insight_after_first_log(self, user_id, habit_name):
+        """
+        After the user's first habit log ever, insert a welcoming coach message
+        (no OpenAI call) so the dashboard shows guidance immediately.
+        """
+        uid = ObjectId(str(user_id))
+        safe = (habit_name or "your habit").strip()[:120] or "your habit"
+        if self._logs.count_documents({"user_id": uid}) != 1:
+            return None
+        if self._insights.find_one({"user_id": uid}):
+            return None
+        generated_at = datetime.now(timezone.utc)
+        compliment = (
+            f"You logged your first completion on “{safe}.” "
+            "That first step is the hardest—and you already took it."
+        )
+        observation = (
+            "Momentum builds one tap at a time. Showing up today already puts you "
+            "ahead of waiting for the perfect moment."
+        )
+        tip = (
+            f"Try pairing “{safe}” with a fixed cue (after class, after coffee, "
+            "before bed) so the next log feels automatic."
+        )
+        doc = {
+            "user_id": uid,
+            "generated_at": generated_at,
+            "insight_type": "starter",
+            "compliment": compliment,
+            "observation": observation,
+            "tip": tip,
+            "content": json.dumps(
+                {"compliment": compliment, "observation": observation, "tip": tip}
+            ),
+            "habits_analyzed": [],
+        }
+        self._insights.insert_one(doc)
+        return {
+            "compliment": compliment,
+            "observation": observation,
+            "tip": tip,
+            "generated_at": generated_at.isoformat(),
+            "insight_type": "starter",
+        }
+
     def generate_insights(self, user_id):
         """Create a new AI insight document based on recent activity."""
         uid = ObjectId(str(user_id))
         habits = list(self._habits.find({"user_id": uid, "is_active": True}))
         if not habits:
             raise ValueError("No active habits to analyze")
+        total_logs = self._logs.count_documents({"user_id": uid})
+        early = total_logs < 20
+        window_days = 30 if early else 14
         end = datetime.now(timezone.utc)
-        start = end - timedelta(days=14)
+        start = end - timedelta(days=window_days)
         habit_lines = []
         completion_parts = []
         best_streak = 0
@@ -53,8 +101,8 @@ class AIService:
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=timezone.utc)
                 days.add(dt.astimezone(timezone.utc).date())
-            rate = round((len(days) / 14) * 100, 2)
-            completion_parts.append(f"{name}: {rate}% completed")
+            rate = round((len(days) / window_days) * 100, 2)
+            completion_parts.append(f"{name}: {rate}% active-day coverage")
             streak = self._calculate_streak_for_habit(hid)
             best_streak = max(best_streak, streak)
             if lowest_rate is None or rate < lowest_rate:
@@ -63,13 +111,21 @@ class AIService:
         habits_block = ", ".join(habit_lines)
         completion_block = "; ".join(completion_parts)
         most_missed = lowest_habit or habits[0].get("name")
+        time_label = f"last ~{window_days} days" if early else "past 2 weeks"
         user_prompt = (
-            "Here is my habit data for the past 2 weeks:\n"
+            f"Here is my habit data for the {time_label}:\n"
             f"Habits: {habits_block}\n"
-            f"Completion rates: {completion_block}\n"
-            f"Best streak: {best_streak} days\n"
-            f"Most missed habit: {most_missed}\n\n"
-            "Give me exactly 3 things:\n"
+            f"Activity (share of days in window with at least one log): {completion_block}\n"
+            f"Best streak across habits: {best_streak} days\n"
+            f"Lowest activity signal: {most_missed}\n"
+        )
+        if early:
+            user_prompt += (
+                f"\nThe user is fairly new (about {total_logs} total check-ins). "
+                "Celebrate small wins, avoid harsh judgment, and keep advice practical.\n"
+            )
+        user_prompt += (
+            "\nGive me exactly 3 things:\n"
             "1. One specific compliment about what I did well (1 sentence)\n"
             "2. One honest, gentle observation about my biggest gap (1 sentence)\n"
             "3. One concrete, actionable tip for next week (1-2 sentences)\n\n"
@@ -95,10 +151,11 @@ class AIService:
         observation = data.get("observation", "")
         tip = data.get("tip", "")
         generated_at = datetime.now(timezone.utc)
+        insight_type = "early" if early else "suggestion"
         doc = {
             "user_id": uid,
             "generated_at": generated_at,
-            "insight_type": "suggestion",
+            "insight_type": insight_type,
             "compliment": compliment,
             "observation": observation,
             "tip": tip,
@@ -117,6 +174,7 @@ class AIService:
             "observation": observation,
             "tip": tip,
             "generated_at": generated_at.isoformat(),
+            "insight_type": insight_type,
         }
 
     def get_latest_insights(self, user_id):

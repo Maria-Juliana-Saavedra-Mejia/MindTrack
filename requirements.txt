@@ -1,5 +1,6 @@
 # Install with: pip install -r requirements.txt (from repo root, venv activated)
 fastapi
+email-validator
 uvicorn[standard]
 jinja2
 httpx

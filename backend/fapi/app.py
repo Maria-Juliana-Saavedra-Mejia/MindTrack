@@ -143,7 +143,15 @@ async def lifespan(app: FastAPI):
 
 def build_app() -> FastAPI:
     app = FastAPI(title="MindTrack", lifespan=lifespan)
-    app.add_middleware(CORSMiddleware, **Config.fastapi_cors_middleware_options())
+    _cors_opts = Config.fastapi_cors_middleware_options()
+    if not _cors_opts.get("allow_origins"):
+        _page_log.warning(
+            "CORS allow_origins is empty (usually FLASK_ENV/ENV=production without CORS_ORIGINS). "
+            "The browser will block requests from Live Server (e.g. :5500) and GitHub Pages. "
+            "Set CORS_ORIGINS to a comma-separated list of UI origins, or use "
+            "FLASK_ENV=development for local API-only work."
+        )
+    app.add_middleware(CORSMiddleware, **_cors_opts)
 
     register_bearer_error_handler(app)
     register_domain_handlers(app)
@@ -230,6 +238,10 @@ def build_app() -> FastAPI:
     @app.get("/log")
     def log_page(request: Request):
         return _safe_template_response(request, "log.html")
+
+    @app.get("/profile")
+    def profile_page(request: Request):
+        return _safe_template_response(request, "profile.html")
 
     @app.get("/favicon.ico")
     def favicon():

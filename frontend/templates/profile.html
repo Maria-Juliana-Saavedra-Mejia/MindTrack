@@ -1,0 +1,39 @@
+{# templates/profile.html #}
+{% extends "base.html" %}
+{% block title %}MindTrack — Profile{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/dashboard.css" />
+<link rel="stylesheet" href="/static/css/profile.css" />
+{% endblock %}
+{% block page_title %}Profile{% endblock %}
+{% block page_tagline %}Theme, layout, and how you appear in MindTrack.{% endblock %}
+{% block content %}
+<div class="profile-page-grid">
+  <div class="card profile-hero-card">
+    <div class="profile-hero-avatar" id="profile-page-avatar" aria-hidden="true">MT</div>
+    <div class="profile-hero-text">
+      <h2 class="profile-hero-name" id="profile-page-name">—</h2>
+      <p class="profile-hero-email" id="profile-page-email"></p>
+    </div>
+  </div>
+  <div class="card profile-settings-card">
+    <h3 class="profile-settings-heading">Appearance</h3>
+    <p class="profile-settings-desc">Choose a calm light look or a dark theme for low light.</p>
+    <div class="profile-theme-row" role="group" aria-label="Theme">
+      <button type="button" class="btn-ghost profile-theme-pill is-active" data-theme="light">Light</button>
+      <button type="button" class="btn-ghost profile-theme-pill" data-theme="dark">Dark</button>
+    </div>
+  </div>
+  <div class="card profile-settings-card">
+    <h3 class="profile-settings-heading">Dashboard layout</h3>
+    <label class="profile-compact-label">
+      <input type="checkbox" id="profile-page-compact" class="profile-compact-input" />
+      <span>Use compact cards on the dashboard (tighter spacing).</span>
+    </label>
+  </div>
+  <p class="profile-note">Preferences are saved on this device only (browser localStorage).</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/profile.js"></script>
+{% endblock %}

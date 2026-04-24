@@ -4,28 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
-      Deployment (GitHub Pages + API on Render/Fly/etc.):
-      • Easiest: GitHub Actions Pages — set repo secret MINDTRACK_API_BASE=https://your-api.host (no /api).
-        Settings → Pages → Source: GitHub Actions. See README.md "GitHub Pages".
-      • Or set mindtrack-api-base / MINDTRACK_DEFAULT_API below to that HTTPS root.
-      • On the API: CORS_ORIGINS=https://youruser.github.io, FLASK_ENV=production.
+      Pages + hosted API: set Actions secret or variable MINDTRACK_API_BASE, or add mindtrack-api.json
+      (see mindtrack-api.json.example), or set mindtrack-api-base / MINDTRACK_DEFAULT_API below. API needs
+      CORS_ORIGINS=https://youruser.github.io and FLASK_ENV=production.
     -->
     <meta name="mindtrack-base-path" content="" />
     <meta name="mindtrack-api-base" content="" />
-    <!-- Live Server + API on another port: set the API port here (e.g. 8000 for uvicorn) or use window.MINDTRACK_DEV_API_PORT. If you use python3 run.py, use the port printed in the terminal (often 5050–5059). -->
     <meta name="mindtrack-dev-api-port" content="" />
     <title>MindTrack — Login</title>
     <script>
       window.MINDTRACK_DEFAULT_API = "";
-      /*
-        Easiest: open only the URL printed by `python3 run.py` (same port for UI + API).
-        Live Server (e.g. :5500) with API elsewhere:
-          • Default API base port in api.js is 8000 (typical uvicorn). For `python3 run.py`, pin the terminal port:
-          • ?mt_api_port=PORT   (e.g. ?mt_api_port=5051 or ?mt_api_port=8000)
-          • Or full URL: ?api=http://127.0.0.1:PORT
-          • Or set meta mindtrack-dev-api-port above, or uncomment:
-      */
-      // window.MINDTRACK_DEV_API_PORT = "8000";
     </script>
     <script>
       (function () {
@@ -46,6 +34,18 @@
           window.MINDTRACK_BASE = String(meta.getAttribute("content")).trim().replace(/\/?$/, "/");
         } else {
           window.MINDTRACK_BASE = mindtrackStaticAppRootFromPathname();
+        }
+        var onGithubPages =
+          /\.github\.io$/.test(location.hostname || "") || location.hostname === "github.io";
+        if (explicit || onGithubPages) {
+          var baseEl = document.createElement("base");
+          baseEl.href = window.MINDTRACK_BASE;
+          var charsetMeta = document.head.querySelector("meta[charset]");
+          if (charsetMeta && charsetMeta.insertAdjacentElement) {
+            charsetMeta.insertAdjacentElement("afterend", baseEl);
+          } else {
+            document.head.insertBefore(baseEl, document.head.firstChild);
+          }
         }
       })();
     </script>
@@ -120,7 +120,26 @@
         </div>
       </div>
     </div>
-    <script src="frontend/static/js/api.js"></script>
+<script>
+  (function () {
+    try {
+      var h = typeof location !== "undefined" ? location.hostname || "" : "";
+      if (!/\.github\.io$/.test(h) && h !== "github.io") return;
+      var loc = typeof location !== "undefined" ? location.href : "";
+      if (!loc) return;
+      var req = new XMLHttpRequest();
+      req.open("GET", new URL("mindtrack-api.json", loc).href, false);
+      req.send(null);
+      if (req.status < 200 || req.status >= 300 || !req.responseText) return;
+      var j = JSON.parse(req.responseText);
+      var b = j && typeof j.apiBase === "string" ? j.apiBase.trim() : "";
+      if (/^https?:\/\//i.test(b)) {
+        window.MINDTRACK_API_BASE = b.replace(/\/+$/, "");
+      }
+    } catch (e) {}
+  })();
+</script>
+<script src="frontend/static/js/api.js"></script>
     <script src="frontend/static/js/auth.js"></script>
   </body>
 </html>

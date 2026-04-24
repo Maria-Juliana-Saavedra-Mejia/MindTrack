@@ -1,15 +1,13 @@
-# Publishes the static login UI to GitHub Pages with your API URL baked into index.html.
+# Publishes static login UI to GitHub Pages with API URL available to the browser.
 #
-# Setup (once):
-#   1) Settings → Secrets and variables → Actions → New repository secret
-#      Name: MINDTRACK_API_BASE
-#      Value: https://your-api.onrender.com   (HTTPS root only, no /api suffix)
-#   2) Settings → Pages → Build and deployment → Source: GitHub Actions
+# Set ONE of (Settings → Secrets and variables → Actions):
+#   • Secret MINDTRACK_API_BASE  — preferred (masked in logs)
+#   • Variable MINDTRACK_API_BASE — ok for a public API URL
+# Value: https://your-api.onrender.com  (HTTPS root only, no /api suffix)
 #
-# API host (.env on Render/Fly/etc.):
-#   CORS_ORIGINS=https://YOURGITHUBUSERNAME.github.io
-#   FLASK_ENV=production
-#   (HTTPS API required — GitHub Pages is HTTPS.)
+# Settings → Pages → Source: GitHub Actions
+#
+# On the API host: CORS_ORIGINS=https://YOURGITHUBUSERNAME.github.io, FLASK_ENV=production
 name: Deploy GitHub Pages
 
 on:
@@ -42,33 +40,54 @@ jobs:
           cp -r frontend _site/frontend
           if [ -f .nojekyll ]; then cp .nojekyll _site/.nojekyll; else touch _site/.nojekyll; fi
 
-      - name: Inject mindtrack-api-base from secret
+      - name: Inject API URL for Pages (meta + mindtrack-api.json)
         env:
-          MINDTRACK_API_BASE: ${{ secrets.MINDTRACK_API_BASE }}
+          SECRET_API: ${{ secrets.MINDTRACK_API_BASE }}
+          VAR_API: ${{ vars.MINDTRACK_API_BASE }}
         run: |
-          if [ -z "${MINDTRACK_API_BASE:-}" ]; then
-            echo "::warning::Secret MINDTRACK_API_BASE is empty — login on Pages will fail until you set it (repo Settings → Secrets → Actions)."
+          API="${SECRET_API:-}"
+          if [ -z "$API" ]; then API="${VAR_API:-}"; fi
+          API="$(printf '%s' "$API" | tr -d '\r' | sed 's/[[:space:]]*$//')"
+          if [ -z "$API" ]; then
+            echo "::warning::Set secret or variable MINDTRACK_API_BASE — otherwise GitHub Pages login will fail."
             exit 0
           fi
+          export MINDTRACK_API_BASE="$API"
           python3 << 'PY'
           import html
+          import json
           import os
           import pathlib
           import re
 
           base = (os.environ.get("MINDTRACK_API_BASE") or "").strip()
-          path = pathlib.Path("_site/index.html")
-          text = path.read_text(encoding="utf-8")
+          if not base:
+              raise SystemExit(0)
           esc = html.escape(base, quote=True)
-          pattern = r'(<meta\s+name="mindtrack-api-base"\s+content=")[^"]*("\s*/>)'
+          site = pathlib.Path("_site")
+          idx = site / "index.html"
+          text = idx.read_text(encoding="utf-8")
 
-          def repl(m):
-              return m.group(1) + esc + m.group(2)
+          (site / "mindtrack-api.json").write_text(
+              json.dumps({"apiBase": base}, separators=(",", ":")),
+              encoding="utf-8",
+          )
 
-          new_text, n = re.subn(pattern, repl, text, count=1)
+          patterns = [
+              r'(<meta\s+name="mindtrack-api-base"\s+content=")[^"]*("\s*/>)',
+              r'(<meta\s+content=")[^"]*("\s+name="mindtrack-api-base"\s*/>)',
+          ]
+          new_text = None
+          n = 0
+          for pat in patterns:
+              new_text, n = re.subn(
+                  pat, lambda m: m.group(1) + esc + m.group(2), text, count=1
+              )
+              if n == 1:
+                  break
           if n != 1:
-              raise SystemExit("Could not find mindtrack-api-base meta in _site/index.html")
-          path.write_text(new_text, encoding="utf-8")
+              raise SystemExit("Could not patch mindtrack-api-base meta in _site/index.html")
+          idx.write_text(new_text, encoding="utf-8")
           PY
 
       - uses: actions/configure-pages@v5

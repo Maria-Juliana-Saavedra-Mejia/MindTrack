@@ -18,6 +18,27 @@ from fapi.app import build_app
 app = build_app()
 
 
+def _print_live_server_cors_hint() -> None:
+    """Help when Chrome + Live Server (:5500) cannot reach the API (missing CORS origin)."""
+    try:
+        from app.config import Config
+
+        if not Config.cors_blocks_live_server_127():
+            return
+    except Exception:
+        return
+    print(
+        "\n  CORS: http://127.0.0.1:5500 is not allowed for this API. "
+        "VS Code Live Server in Chrome will fail with “No Access-Control-Allow-Origin”.\n"
+        "  Fix (pick one): set FLASK_ENV=development in .env  OR  add that URL to CORS_ORIGINS  OR\n"
+        "  if you use FLASK_ENV=production with CORS_ORIGINS set, add MINDTRACK_MERGE_LIVE_SERVER_CORS=1\n",
+        file=sys.stderr,
+    )
+
+
+_print_live_server_cors_hint()
+
+
 def _lsof_listen(port: int) -> str:
     try:
         import subprocess

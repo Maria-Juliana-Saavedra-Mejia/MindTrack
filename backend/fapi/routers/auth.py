@@ -1,11 +1,12 @@
 # fapi/routers/auth.py
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-from pymongo.errors import WriteError
+from pymongo.errors import DuplicateKeyError, WriteError
 
 from app.config import Config
+from app.schemas.auth import LoginBody, RegisterBody
 from app.utils.error_handlers import InvalidCredentialsError, UserAlreadyExistsError
 from app.utils.logger import get_logger
 from fapi.deps import get_jwt_sub
@@ -15,14 +16,15 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", status_code=201)
-def register(request: Request, body: dict = Body(default_factory=dict)):
+def register(request: Request, body: RegisterBody):
     auth = request.app.state.auth_service
-    logger.info("Register attempt for %s", body.get("email") if body else None)
+    payload = body.model_dump()
+    logger.info("Register attempt for %s", payload.get("email"))
     try:
-        auth.register_user(body)
+        auth.register_user(payload)
         return auth.login_user(
-            body.get("email", ""),
-            body.get("password", ""),
+            payload["email"],
+            payload["password"],
             _post_register_retries=5,
         )
     except ValueError as exc:
@@ -37,9 +39,19 @@ def register(request: Request, body: dict = Body(default_factory=dict)):
             content={"error": True, "message": str(exc), "status": 409},
             status_code=409,
         )
+    except DuplicateKeyError as exc:
+        logger.warning("Register duplicate key: %s", exc)
+        return JSONResponse(
+            content={
+                "error": True,
+                "message": "Email already registered",
+                "status": 409,
+            },
+            status_code=409,
+        )
     except WriteError as exc:
         logger.exception("Register MongoDB write rejected")
-        payload = {
+        payload_err = {
             "error": True,
             "message": (
                 "Registration data was rejected by the database "
@@ -48,8 +60,8 @@ def register(request: Request, body: dict = Body(default_factory=dict)):
             "status": 400,
         }
         if Config._runtime_env_name() != "production":
-            payload["detail"] = str(exc)
-        return JSONResponse(content=payload, status_code=400)
+            payload_err["detail"] = str(exc)
+        return JSONResponse(content=payload_err, status_code=400)
     except InvalidCredentialsError as exc:
         logger.warning(
             "Register succeeded but automatic sign-in failed: %s", exc
@@ -67,23 +79,22 @@ def register(request: Request, body: dict = Body(default_factory=dict)):
         )
     except Exception as exc:
         logger.exception("Register failed with unexpected error")
-        payload = {
+        payload_err = {
             "error": True,
             "message": "Registration could not be completed. Try again later.",
             "status": 500,
         }
         if Config._runtime_env_name() != "production":
-            payload["detail"] = str(exc)
-        return JSONResponse(content=payload, status_code=500)
+            payload_err["detail"] = str(exc)
+        return JSONResponse(content=payload_err, status_code=500)
 
 
 @router.post("/login")
-def login(request: Request, body: dict = Body(default_factory=dict)):
+def login(request: Request, body: LoginBody):
     auth = request.app.state.auth_service
-    logger.info("Login attempt for %s", body.get("email") if body else None)
-    return auth.login_user(
-        body.get("email", ""), body.get("password", "")
-    )
+    creds = body.model_dump()
+    logger.info("Login attempt for %s", creds.get("email"))
+    return auth.login_user(creds["email"], creds["password"])
 
 
 @router.post("/logout")

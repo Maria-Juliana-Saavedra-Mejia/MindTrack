@@ -5,6 +5,7 @@
   if (!nameEl || !avEl) {
     return;
   }
+
   function render(user) {
     const u = user && user.full_name ? user : { full_name: "Student" };
     nameEl.textContent = u.full_name || "Student";
@@ -16,26 +17,54 @@
       .toUpperCase();
     avEl.textContent = initials;
   }
+
   if (!localStorage.getItem("access_token")) {
     return;
   }
-  let user = JSON.parse(localStorage.getItem("mindtrack_user") || "{}");
+  const user = JSON.parse(localStorage.getItem("mindtrack_user") || "{}");
   if (user && user.full_name) {
     render(user);
-    return;
-  }
-  (async function loadProfile() {
-    try {
-      const r = await apiFetch("/api/auth/me", "GET");
-      if (r && r.user) {
-        user = r.user;
-        localStorage.setItem("mindtrack_user", JSON.stringify(user));
-        render(user);
-      } else {
+  } else {
+    (async function loadProfile() {
+      try {
+        const r = await apiFetch("/api/auth/me", "GET");
+        if (r && r.user) {
+          localStorage.setItem("mindtrack_user", JSON.stringify(r.user));
+          render(r.user);
+        } else {
+          render({});
+        }
+      } catch (e) {
         render({});
       }
+    })();
+  }
+
+  const THEME_KEY = "mindtrack_theme";
+  const COMPACT_KEY = "mindtrack_compact_ui";
+
+  function applyThemeFromStorage() {
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved === "dark" || saved === "light") {
+        document.documentElement.setAttribute("data-theme", saved);
+      }
     } catch (e) {
-      render({});
+      /* */
     }
-  })();
+  }
+
+  function applyCompactFromStorage() {
+    try {
+      document.documentElement.classList.toggle(
+        "mindtrack-compact",
+        localStorage.getItem(COMPACT_KEY) === "1"
+      );
+    } catch (e) {
+      /* */
+    }
+  }
+
+  applyThemeFromStorage();
+  applyCompactFromStorage();
 })();

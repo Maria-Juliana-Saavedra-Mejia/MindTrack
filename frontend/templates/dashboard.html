@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="/static/css/dashboard.css" />
 {% endblock %}
 {% block page_title %}Dashboard{% endblock %}
+{% block page_tagline %}Momentum, streaks, and coach notes—at a glance.{% endblock %}
 {% block content %}
 <div class="kpi-grid">
   <div class="card kpi-card">
@@ -21,18 +22,30 @@
   </div>
 </div>
 <div class="card chart-card">
-  <h3 style="margin-top: 0">Daily completions (last 30 days)</h3>
-  <canvas id="trend-chart" height="120"></canvas>
+  <h3 class="chart-card__title">Daily completions (last 3 days)</h3>
+  <div class="chart-wrap">
+    <canvas id="trend-chart" aria-label="Completions over the last three days"></canvas>
+  </div>
 </div>
 <div class="card ai-card">
-  <div style="display: flex; justify-content: space-between; align-items: center">
-    <h3 style="margin: 0">AI Insight</h3>
-    <button class="btn-primary" id="refresh-insight" type="button">Refresh Insight</button>
+  <div class="ai-card-header">
+    <div>
+      <p class="ai-eyebrow">Coach</p>
+      <h3 class="ai-title">AI insights</h3>
+      <p class="ai-sub">Personalized feedback from your last two weeks of activity.</p>
+    </div>
+    <button class="btn-primary btn-insight-refresh" id="refresh-insight" type="button">
+      <span class="btn-insight-label">New insight</span>
+    </button>
   </div>
-  <div id="insight-body" style="margin-top: 1rem"></div>
+  <p class="ai-meta" id="insight-meta" hidden></p>
+  <div id="insight-body" class="insight-body"></div>
 </div>
-<div class="card">
-  <h3 style="margin-top: 0">Quick Log</h3>
+<div class="card quick-log-card">
+  <div class="quick-log-header">
+    <h3 class="quick-log-title">Quick log</h3>
+    <p class="quick-log-sub">Log today in one tap. Counts show how many times you logged each habit today.</p>
+  </div>
   <div class="quick-log" id="quick-log"></div>
 </div>
 {% endblock %}

@@ -1,5 +1,5 @@
 /* static/css/global.css */
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 :root {
   --color-primary: #0f6e56;
@@ -14,8 +14,8 @@
   --shadow-soft: 0 10px 30px rgba(15, 110, 86, 0.08);
   --transition-fast: 0.2s ease;
   --transition-med: 0.3s ease;
-  --font-body: "DM Sans", system-ui, -apple-system, sans-serif;
-  --font-heading: "DM Serif Display", Georgia, serif;
+  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: "Fraunces", Georgia, "Times New Roman", serif;
 }
 
 *,
@@ -92,4 +92,99 @@ button {
   color: #b42318;
   font-size: 0.85rem;
   margin-top: 0.25rem;
+}
+
+/* --- Top bar (app shell) --- */
+.topbar-left {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-title {
+  font-size: clamp(1.25rem, 2.2vw, 1.55rem);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.page-tagline {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-weight: 500;
+  max-width: 36rem;
+  line-height: 1.45;
+}
+
+.page-tagline:empty {
+  display: none;
+}
+
+.topbar-profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: 1rem;
+  padding: 0.35rem 0.55rem 0.35rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.topbar-profile-link:hover {
+  border-color: rgba(15, 110, 86, 0.35);
+  background: var(--color-surface);
+}
+
+.topbar-profile-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-text);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar .avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.85rem;
+}
+
+/* --- Dark theme --- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-text: #f1f5f9;
+  --color-muted: #94a3b8;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .topbar-profile-link {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .page-title {
+  color: #f8fafc;
+}
+
+/* Compact layout (optional) */
+html.mindtrack-compact .main .content .card {
+  padding: 1rem 1.1rem;
+}
+
+html.mindtrack-compact .kpi-card .value {
+  font-size: 1.75rem;
 }

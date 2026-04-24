@@ -44,6 +44,15 @@ def create_log(
             user_id, body.get("habit_id"), body.get("note")
         )
         logger.info("Created log %s", log.get("id"))
+        try:
+            habit = request.app.state.habit_service.get_habit(
+                str(body.get("habit_id")), user_id
+            )
+            request.app.state.ai_service.seed_starter_insight_after_first_log(
+                user_id, (habit or {}).get("name") or "your habit"
+            )
+        except Exception:
+            logger.exception("Starter coach insight skipped after log create")
         return {"log": log}
     except ValueError as exc:
         logger.warning("Create log validation error: %s", exc)

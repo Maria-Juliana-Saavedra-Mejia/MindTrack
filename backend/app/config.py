@@ -14,9 +14,17 @@ _DEV_JWT_SECRET = (
 _DEV_OPENAI_API_KEY = "sk-dev-placeholder-not-for-production-openai-calls"
 
 # VS Code Live Server → FastAPI cross-origin dev (when CORS_ORIGINS is unset).
-_DEFAULT_DEV_CORS_ORIGIN = "http://127.0.0.1:5500"
+# Live Server may open as localhost or 127.0.0.1; both must be allowed.
+_DEFAULT_DEV_CORS_ORIGINS = (
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+)
 
 _CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+
+def _truthy_env(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 
 class Config:
@@ -65,8 +73,12 @@ class Config:
         """
         Kwargs for Starlette CORSMiddleware.
 
-        - Non-production, no CORS_ORIGINS: allow only Live Server at _DEFAULT_DEV_CORS_ORIGIN.
-        - CORS_ORIGINS set: comma-separated explicit origins (include Live Server if needed).
+        - Non-production, no CORS_ORIGINS: allow Live Server on 127.0.0.1:5500 and localhost:5500.
+        - CORS_ORIGINS set: comma-separated explicit origins. In non-production, Live Server
+          origins (127.0.0.1:5500 and localhost:5500) are always merged in so local HTML on :5500
+          still works when CORS_ORIGINS lists only a deployed UI (e.g. GitHub Pages).
+        - Production with CORS_ORIGINS: merge is off by default. Set MINDTRACK_MERGE_LIVE_SERVER_CORS=1
+          to append Live Server origins when you still test the UI from :5500 against a production-flag API.
         - Production, no CORS_ORIGINS: no browser origins (set CORS_ORIGINS for deploy hosts).
         """
         common = {
@@ -77,9 +89,17 @@ class Config:
         }
         raw = os.getenv("CORS_ORIGINS", "").strip()
         if raw:
+            origins = [o.strip() for o in raw.split(",") if o.strip()]
+            merge_live = cls._runtime_env_name() != "production" or _truthy_env(
+                "MINDTRACK_MERGE_LIVE_SERVER_CORS"
+            )
+            if merge_live:
+                for d in _DEFAULT_DEV_CORS_ORIGINS:
+                    if d not in origins:
+                        origins.append(d)
             return {
                 **common,
-                "allow_origins": [o.strip() for o in raw.split(",") if o.strip()],
+                "allow_origins": origins,
             }
         if cls._runtime_env_name() == "production":
             return {
@@ -88,8 +108,15 @@ class Config:
             }
         return {
             **common,
-            "allow_origins": [_DEFAULT_DEV_CORS_ORIGIN],
+            "allow_origins": list(_DEFAULT_DEV_CORS_ORIGINS),
         }
+
+    @classmethod
+    def cors_blocks_live_server_127(cls) -> bool:
+        """True when the default VS Code Live Server origin is not in the CORS allow list."""
+        opts = cls.fastapi_cors_middleware_options()
+        allowed = set(opts.get("allow_origins") or [])
+        return "http://127.0.0.1:5500" not in allowed
 
     @staticmethod
     def mongo_client_kwargs():

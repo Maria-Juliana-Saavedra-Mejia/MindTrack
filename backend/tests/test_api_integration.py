@@ -144,6 +144,92 @@ def test_api_cors_preflight_includes_allow_origin(client):
     assert acao in ("http://127.0.0.1:5500", "*")
 
 
+def test_cors_merges_live_server_when_cors_origins_github_only_in_development(
+    mongo_stub, monkeypatch,
+):
+    """CORS_ORIGINS may list only GitHub Pages; local Live Server must still work in dev."""
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("CORS_ORIGINS", "https://user.github.io")
+    monkeypatch.setenv("FLASK_ENV", "development")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5050") as c:
+        r = c.options(
+            "/api/auth/register",
+            headers={
+                "Origin": "http://127.0.0.1:5500",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type, authorization",
+            },
+        )
+    assert r.status_code in (200, 204, 400, 405)
+    assert r.headers.get("access-control-allow-origin") == "http://127.0.0.1:5500"
+
+
+def test_cors_does_not_merge_live_server_in_production(mongo_stub, monkeypatch):
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("CORS_ORIGINS", "https://user.github.io")
+    monkeypatch.setenv("FLASK_ENV", "production")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5050") as c:
+        r = c.options(
+            "/api/auth/register",
+            headers={
+                "Origin": "http://127.0.0.1:5500",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type, authorization",
+            },
+        )
+    assert r.status_code in (200, 204, 400, 405)
+    assert r.headers.get("access-control-allow-origin") in (None, "")
+
+
+def test_cors_merges_live_server_when_merge_flag_in_production(mongo_stub, monkeypatch):
+    """Production + explicit CORS_ORIGINS can still allow Live Server when opt-in flag is set."""
+    monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
+    monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("CORS_ORIGINS", "https://user.github.io")
+    monkeypatch.setenv("FLASK_ENV", "production")
+    monkeypatch.setenv("MINDTRACK_MERGE_LIVE_SERVER_CORS", "1")
+    from fapi.app import build_app
+
+    with TestClient(build_app(), base_url="http://127.0.0.1:5050") as c:
+        r = c.options(
+            "/api/auth/register",
+            headers={
+                "Origin": "http://127.0.0.1:5500",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type, authorization",
+            },
+        )
+    assert r.status_code in (200, 204, 400, 405)
+    assert r.headers.get("access-control-allow-origin") == "http://127.0.0.1:5500"
+
+
+def test_api_cors_preflight_allows_localhost_live_server(client):
+    """Live Server often uses http://localhost:5500 (not 127.0.0.1)."""
+    resp = client.options(
+        "/api/auth/register",
+        headers={
+            "Origin": "http://localhost:5500",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type, authorization",
+        },
+    )
+    assert resp.status_code in (200, 204, 400, 405)
+    acao = resp.headers.get("access-control-allow-origin")
+    assert acao in ("http://localhost:5500", "*")
+
+
 def test_static_login_css_and_logo_reachable(client):
     for path in ("/static/css/login.css", "/static/images/mindtrack-logo.png"):
         resp = client.get(path)
@@ -178,6 +264,14 @@ def test_dashboard_template_renders(client):
     assert b"/static/js/dashboard.js" in resp.content
 
 
+def test_profile_page_renders(client):
+    resp = client.get("/profile")
+    assert resp.status_code == 200
+    assert b"/static/js/profile.js" in resp.content
+    assert b"/static/css/profile.css" in resp.content
+    assert b'href="/profile"' in resp.content
+
+
 def test_login_invalid_credentials(client, mongo_stub):
     users = mongo_stub["users"]
     users.find_one.return_value = None
@@ -190,6 +284,23 @@ def test_login_invalid_credentials(client, mongo_stub):
 def test_habits_requires_auth(client):
     resp = client.get("/api/habits")
     assert resp.status_code == 401
+
+
+
+def test_register_password_too_short_returns_422(client):
+    resp = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "A",
+            "email": "shortpw@example.com",
+            "password": "short",
+        },
+    )
+    assert resp.status_code == 422
+    body = resp.json()
+    assert body.get("error") is True
+    assert body.get("status") == 422
+    assert "details" in body
 
 
 def test_register_duplicate(client, mongo_stub):
@@ -367,6 +478,51 @@ def test_create_log(client, mongo_stub):
         json={"habit_id": str(hid), "note": ""},
     )
     assert resp.status_code == 201
+
+
+def test_create_log_seeds_starter_insight_on_first_checkin(client, mongo_stub):
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find_one.return_value = {
+        "_id": hid,
+        "user_id": uid,
+        "name": "Read",
+        "description": "",
+        "frequency": "daily",
+        "category": "productivity",
+        "color": "#fff",
+        "icon": "📚",
+        "created_at": datetime.now(timezone.utc),
+        "is_active": True,
+    }
+    logs = mongo_stub["habit_logs"]
+    inserted = ObjectId()
+    logs.insert_one.return_value = MagicMock(inserted_id=inserted)
+    now = datetime.now(timezone.utc)
+    logs.find.return_value = FakeCursor([{"logged_at": now}])
+    logs.find_one.return_value = {
+        "_id": inserted,
+        "habit_id": hid,
+        "user_id": uid,
+        "logged_at": now,
+        "note": "",
+        "streak_count": 1,
+    }
+    logs.count_documents.return_value = 1
+    insights = mongo_stub["ai_insights"]
+    insights.find_one.return_value = None
+    token = _token(client, uid)
+    resp = client.post(
+        "/api/logs",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"habit_id": str(hid), "note": ""},
+    )
+    assert resp.status_code == 201
+    insights.insert_one.assert_called_once()
+    starter = insights.insert_one.call_args[0][0]
+    assert starter.get("insight_type") == "starter"
+    assert "Read" in starter.get("compliment", "")
 
 
 def test_logs_list(client, mongo_stub):
