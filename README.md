@@ -35,7 +35,7 @@ New accounts store **bcrypt** hashes in **`password_hash`**. Older demo document
 
 Use this when you want **Mongo + API + login page** on your laptop with one flow:
 
-1. **Install** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or run Mongo another way and set **`MONGO_URI`** in **`.env`**).
+1. **Optional local Mongo:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and **start it** before the script (otherwise the script skips **`docker compose`** and you must use **Atlas** or another **`MONGO_URI`**). Or run Mongo without Docker and set **`MONGO_URI`** in **`.env`**.
 2. From the repo root:
 
    ```bash

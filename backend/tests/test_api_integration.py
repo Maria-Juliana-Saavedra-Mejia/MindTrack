@@ -74,7 +74,10 @@ def test_mindtrack_http_port_cors_allows_live_server_with_strict_cors_origins(
     monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
     monkeypatch.setenv("JWT_SECRET", "a-very-long-test-secret-key-for-jwt-testing")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("CORS_ORIGINS", "https://production.example.com")
+    monkeypatch.setenv(
+        "CORS_ORIGINS",
+        "https://production.example.com,http://127.0.0.1:5500",
+    )
     monkeypatch.setenv("FLASK_ENV", "development")
     from fapi.app import build_app
 
@@ -162,9 +165,17 @@ def test_entry_routes_serve_same_root_index_html(client):
         assert resp.status_code == 200
         data = resp.content
         assert b'id="login-form"' in data
-        assert b"frontend/static/js/auth.js" in data
-        assert b"frontend/static/css/login.css" in data
-        assert b"frontend/static/images/mindtrack-logo.png" in data
+        assert b"/frontend/static/js/auth.js" in data
+        assert b"/frontend/static/css/login.css" in data
+        assert b"/frontend/static/images/mindtrack-logo.png" in data
+
+
+def test_dashboard_template_renders(client):
+    """Templates use Flask-style url_for('static', ...); FastAPI injects a compatible helper."""
+    resp = client.get("/dashboard")
+    assert resp.status_code == 200
+    assert b'id="kpi-active"' in resp.content
+    assert b"/static/js/dashboard.js" in resp.content
 
 
 def test_login_invalid_credentials(client, mongo_stub):

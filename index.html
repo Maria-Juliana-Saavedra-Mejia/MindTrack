@@ -14,7 +14,7 @@
     <meta name="mindtrack-api-base" content="" />
     <!-- Live Server + API on another port: set the API port here (e.g. 8000 for uvicorn) or use window.MINDTRACK_DEV_API_PORT. If you use python3 run.py, use the port printed in the terminal (often 5050–5059). -->
     <meta name="mindtrack-dev-api-port" content="" />
-    <link rel="icon" type="image/svg+xml" href="frontend/static/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/frontend/static/favicon.svg" />
     <title>MindTrack — Login</title>
     <script>
       window.MINDTRACK_DEFAULT_API = "";
@@ -38,14 +38,14 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="frontend/static/css/login.css" />
+    <link rel="stylesheet" href="/frontend/static/css/login.css" />
   </head>
   <body>
     <div class="auth-shell">
       <div class="brand-panel">
         <div>
           <div class="brand-logo-wrap">
-            <img src="frontend/static/images/mindtrack-logo.png" alt="MindTrack" class="brand-logo" width="320" />
+            <img src="/frontend/static/images/mindtrack-logo.png" alt="MindTrack" class="brand-logo" width="320" />
           </div>
           <p class="tagline">Build habits. Track progress. Stay consistent.</p>
         </div>
@@ -108,7 +108,7 @@
         </div>
       </div>
     </div>
-    <script src="frontend/static/js/api.js"></script>
-    <script src="frontend/static/js/auth.js"></script>
+    <script src="/frontend/static/js/api.js"></script>
+    <script src="/frontend/static/js/auth.js"></script>
   </body>
 </html>

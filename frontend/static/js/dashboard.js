@@ -1,6 +1,12 @@
 /* static/js/dashboard.js */
+function mindtrackLoginUrl() {
+  return typeof mindtrackAppPath === "function"
+    ? mindtrackAppPath("login")
+    : "/login";
+}
+
 if (!localStorage.getItem("access_token")) {
-  window.location.href = mindtrackAppPath("login");
+  window.location.href = mindtrackLoginUrl();
 }
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
@@ -11,7 +17,7 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   }
   localStorage.removeItem("access_token");
   localStorage.removeItem("mindtrack_user");
-  window.location.href = mindtrackAppPath("login");
+  window.location.href = mindtrackLoginUrl();
 });
 
 async function loadKpis() {
@@ -59,7 +65,21 @@ async function loadChart() {
   });
   const labels = Object.keys(perDay).sort();
   const values = labels.map((k) => perDay[k]);
-  const ctx = document.getElementById("trend-chart").getContext("2d");
+  const canvas = document.getElementById("trend-chart");
+  if (!canvas) {
+    return;
+  }
+  if (typeof Chart === "undefined") {
+    canvas.style.display = "none";
+    const p = document.createElement("p");
+    p.style.color = "#6b7280";
+    p.style.marginTop = "0";
+    p.textContent =
+      "Chart library did not load (network or CDN blocked). KPIs and quick log still work.";
+    canvas.parentElement.insertBefore(p, canvas.nextSibling);
+    return;
+  }
+  const ctx = canvas.getContext("2d");
   new Chart(ctx, {
     type: "line",
     data: {
@@ -144,9 +164,19 @@ async function loadQuickLog() {
   });
 }
 
-(async () => {
-  await loadKpis();
-  await loadChart();
-  await loadInsight();
-  await loadQuickLog();
+(async function dashboardInit() {
+  try {
+    await loadKpis();
+    await loadChart();
+    await loadInsight();
+    await loadQuickLog();
+  } catch (e) {
+    console.error("MindTrack dashboard init:", e);
+    const el = document.getElementById("insight-body");
+    if (el) {
+      el.textContent =
+        "Could not load dashboard data: " +
+        (e && e.message ? e.message : String(e));
+    }
+  }
 })();

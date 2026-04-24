@@ -13,6 +13,11 @@ _DEV_JWT_SECRET = (
 # from your hosting environment.
 _DEV_OPENAI_API_KEY = "sk-dev-placeholder-not-for-production-openai-calls"
 
+# VS Code Live Server → FastAPI cross-origin dev (when CORS_ORIGINS is unset).
+_DEFAULT_DEV_CORS_ORIGIN = "http://127.0.0.1:5500"
+
+_CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
 
 class Config:
     """Loads settings from environment variables when validated or exported."""
@@ -58,42 +63,32 @@ class Config:
     @classmethod
     def fastapi_cors_middleware_options(cls):
         """
-        Kwargs for Starlette CORSMiddleware. Set CORS_ORIGINS in production, e.g.:
-        CORS_ORIGINS=https://user.github.io,https://app.example.com
-        (comma-separated browser origins, no /api path). If unset, non-production
-        allows any origin (*) so Live Server, localhost vs 127.0.0.1, and
-        any port all work. Production with no CORS_ORIGINS = no CORS (set env to fix).
+        Kwargs for Starlette CORSMiddleware.
+
+        - Non-production, no CORS_ORIGINS: allow only Live Server at _DEFAULT_DEV_CORS_ORIGIN.
+        - CORS_ORIGINS set: comma-separated explicit origins (include Live Server if needed).
+        - Production, no CORS_ORIGINS: no browser origins (set CORS_ORIGINS for deploy hosts).
         """
+        common = {
+            "allow_credentials": False,
+            "allow_methods": list(_CORS_ALLOW_METHODS),
+            "allow_headers": ["*"],
+            "allow_origin_regex": None,
+        }
         raw = os.getenv("CORS_ORIGINS", "").strip()
         if raw:
-            opts: dict = {
+            return {
+                **common,
                 "allow_origins": [o.strip() for o in raw.split(",") if o.strip()],
-                "allow_origin_regex": None,
-                "allow_credentials": False,
-                "allow_methods": ["*"],
-                "allow_headers": ["*"],
             }
-            if cls._runtime_env_name() != "production":
-                # Allow Live Server / preview on any loopback port (e.g. :5500) to read GET
-                # /mindtrack-http-port during api.js discovery when CORS_ORIGINS is an explicit list.
-                opts["allow_origin_regex"] = (
-                    r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$"
-                )
-            return opts
         if cls._runtime_env_name() == "production":
             return {
+                **common,
                 "allow_origins": [],
-                "allow_origin_regex": None,
-                "allow_credentials": False,
-                "allow_methods": ["*"],
-                "allow_headers": ["*"],
             }
         return {
-            "allow_origins": ["*"],
-            "allow_origin_regex": None,
-            "allow_credentials": False,
-            "allow_methods": ["*"],
-            "allow_headers": ["*"],
+            **common,
+            "allow_origins": [_DEFAULT_DEV_CORS_ORIGIN],
         }
 
     @staticmethod

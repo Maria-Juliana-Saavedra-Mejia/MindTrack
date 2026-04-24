@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {% block title %}MindTrack — Habits{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/habits.css') }}" />
+<link rel="stylesheet" href="/static/css/habits.css" />
 {% endblock %}
 {% block page_title %}Habits{% endblock %}
 {% block content %}
@@ -53,5 +53,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/habits.js') }}"></script>
+<script src="/static/js/habits.js"></script>
 {% endblock %}

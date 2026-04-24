@@ -14,10 +14,18 @@ if [[ ! -f .env ]]; then
 fi
 
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-  echo "Starting MongoDB (docker compose up -d)..."
-  docker compose up -d
+  if docker info >/dev/null 2>&1; then
+    echo "Starting MongoDB (docker compose up -d)..."
+    if ! docker compose up -d; then
+      echo "Warning: docker compose failed (image pull or compose error). Fix Docker/network, or use Atlas in .env."
+    fi
+  else
+    echo "Docker is installed but the daemon is not running (start Docker Desktop)."
+    echo "  Skipping docker compose. Use MongoDB Atlas: set MONGO_URI + MONGO_DB_NAME in .env,"
+    echo "  or start Docker and run: docker compose up -d"
+  fi
 else
-  echo "Docker Compose not available — ensure MongoDB is running at MONGO_URI from .env."
+  echo "Docker Compose not found — ensure MongoDB is reachable at MONGO_URI in .env."
 fi
 
 PY="${PYTHON:-python3}"

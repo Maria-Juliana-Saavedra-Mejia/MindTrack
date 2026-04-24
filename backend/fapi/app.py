@@ -4,6 +4,7 @@
 import os
 import re
 from contextlib import asynccontextmanager
+from html import escape
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,8 @@ from fapi.exception_handlers import register_domain_handlers
 from fapi.routers import ai, auth, habits, logs
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+_page_log = get_logger(__name__)
 
 _MONGO_SERVER_SELECTION_TIMEOUT_MS = 8000
 
@@ -158,6 +161,26 @@ def build_app() -> FastAPI:
     )
     _front = os.path.join(_REPO_ROOT, "frontend", "static")
 
+    def _safe_template_response(request: Request, template_name: str):
+        try:
+            return _templates.TemplateResponse(request, template_name)
+        except Exception as exc:
+            _page_log.exception("Template render failed: %s", template_name)
+            if Config._runtime_env_name() != "production":
+                body = (
+                    "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+                    "<title>MindTrack</title></head><body>"
+                    "<h1>Page failed to render</h1>"
+                    f"<p>Template: <code>{escape(template_name)}</code></p>"
+                    f"<pre style=\"white-space:pre-wrap\">{escape(str(exc))}</pre>"
+                    "</body></html>"
+                )
+                return HTMLResponse(content=body, status_code=500)
+            return HTMLResponse(
+                "<!DOCTYPE html><html><body><p>Page unavailable.</p></body></html>",
+                status_code=500,
+            )
+
     @app.get("/health")
     def health():
         return {"status": "ok"}
@@ -198,15 +221,15 @@ def build_app() -> FastAPI:
 
     @app.get("/dashboard")
     def dashboard_page(request: Request):
-        return _templates.TemplateResponse("dashboard.html", {"request": request})
+        return _safe_template_response(request, "dashboard.html")
 
     @app.get("/habits")
     def habits_page(request: Request):
-        return _templates.TemplateResponse("habits.html", {"request": request})
+        return _safe_template_response(request, "habits.html")
 
     @app.get("/log")
     def log_page(request: Request):
-        return _templates.TemplateResponse("log.html", {"request": request})
+        return _safe_template_response(request, "log.html")
 
     @app.get("/favicon.ico")
     def favicon():

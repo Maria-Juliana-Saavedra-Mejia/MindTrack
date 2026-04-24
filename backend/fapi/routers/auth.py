@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Request
 from fastapi.responses import JSONResponse
+from pymongo.errors import WriteError
 
 from app.config import Config
 from app.utils.error_handlers import InvalidCredentialsError, UserAlreadyExistsError
@@ -36,6 +37,19 @@ def register(request: Request, body: dict = Body(default_factory=dict)):
             content={"error": True, "message": str(exc), "status": 409},
             status_code=409,
         )
+    except WriteError as exc:
+        logger.exception("Register MongoDB write rejected")
+        payload = {
+            "error": True,
+            "message": (
+                "Registration data was rejected by the database "
+                "(validation or schema mismatch)."
+            ),
+            "status": 400,
+        }
+        if Config._runtime_env_name() != "production":
+            payload["detail"] = str(exc)
+        return JSONResponse(content=payload, status_code=400)
     except InvalidCredentialsError as exc:
         logger.warning(
             "Register succeeded but automatic sign-in failed: %s", exc
