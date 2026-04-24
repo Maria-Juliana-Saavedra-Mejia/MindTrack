@@ -38,17 +38,46 @@
             />
           </div>
         </a>
-        <nav>
-          <a href="/dashboard" class="{{ 'active' if request.path == '/dashboard' else '' }}"
-            >Dashboard</a
+        <nav class="sidebar-nav" aria-label="Main">
+          <a
+            href="/dashboard"
+            class="sidebar-nav__link {{ 'active' if request.path == '/dashboard' else '' }}"
           >
-          <a href="/habits" class="{{ 'active' if request.path == '/habits' else '' }}">Habits</a>
-          <a href="/log" class="{{ 'active' if request.path == '/log' else '' }}">Log</a>
-          <a href="/profile" class="{{ 'active' if request.path == '/profile' else '' }}">Profile</a>
+            <svg class="sidebar-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="9" rx="1" />
+              <rect x="14" y="3" width="7" height="5" rx="1" />
+              <rect x="14" y="12" width="7" height="9" rx="1" />
+              <rect x="3" y="16" width="7" height="5" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="/habits" class="sidebar-nav__link {{ 'active' if request.path == '/habits' else '' }}">
+            <svg class="sidebar-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span>Habits</span>
+          </a>
+          <a href="/log" class="sidebar-nav__link {{ 'active' if request.path == '/log' else '' }}">
+            <svg class="sidebar-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <span>Log</span>
+          </a>
+          <a href="/profile" class="sidebar-nav__link {{ 'active' if request.path == '/profile' else '' }}">
+            <svg class="sidebar-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>Profile</span>
+          </a>
         </nav>
-        <button class="btn-ghost" id="logout-btn" style="color: #fff; border-color: #ffffff55">
-          Logout
-        </button>
+        <div class="sidebar-footer">
+          <button class="btn-ghost btn-sidebar-logout" id="logout-btn" type="button">Log out</button>
+        </div>
       </aside>
       <div class="main">
         <header class="topbar">

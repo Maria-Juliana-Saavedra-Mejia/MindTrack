@@ -48,11 +48,11 @@ function _setPagesApiSetupHint(message) {
   if (isMissing && _isGithubPagesHost()) {
     const origin = window.location.origin || "https://YOURUSERNAME.github.io";
     hint.textContent =
-      "GitHub Pages only serves this login page. Add the Actions secret or variable " +
-      "MINDTRACK_API_BASE (HTTPS API root, no /api), then redeploy Pages. On your API host " +
-      "set CORS_ORIGINS to " +
+      "GitHub Pages only serves this login page. In GitHub: repo Settings → Secrets and variables → " +
+      "Actions → add secret or variable MINDTRACK_API_BASE = your API root (https://…, no /api); " +
+      "not on Render. Redeploy Pages. On Render set CORS_ORIGINS to " +
       origin +
-      " and FLASK_ENV=production. Details: README → GitHub Pages (Troubleshooting).";
+      " and FLASK_ENV=production. See README → GitHub Pages (Troubleshooting).";
     hint.hidden = false;
   } else {
     hint.textContent = "";

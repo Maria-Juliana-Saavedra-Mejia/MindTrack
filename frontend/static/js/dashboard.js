@@ -45,13 +45,25 @@ function formatInsightTimestamp(iso) {
   }
 }
 
-function showToast(message) {
+function mindtrackCssVar(name, fallback) {
+  try {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    if (raw) {
+      return raw;
+    }
+  } catch (e) {
+    /* */
+  }
+  return fallback;
+}
+
+function showToast(message, kind) {
   const existing = document.querySelector(".toast");
   if (existing) {
     existing.remove();
   }
   const t = document.createElement("div");
-  t.className = "toast";
+  t.className = "toast" + (kind === "success" ? " toast--success" : "");
   t.textContent = message;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3200);
@@ -135,8 +147,7 @@ async function loadChart() {
   if (typeof Chart === "undefined") {
     canvas.style.display = "none";
     const p = document.createElement("p");
-    p.style.color = "#6b7280";
-    p.style.marginTop = "0";
+    p.className = "chart-fallback-msg";
     p.textContent =
       "Chart library did not load (network or CDN blocked). KPIs and quick log still work.";
     canvas.parentElement.insertBefore(p, canvas.nextSibling);
@@ -148,7 +159,14 @@ async function loadChart() {
   }
   const ctx = canvas.getContext("2d");
   const ff = chartFontFamily();
-  const gridColor = "rgba(15, 110, 86, 0.08)";
+  const gridColor = mindtrackCssVar("--chart-grid", "rgba(100, 116, 139, 0.12)");
+  const lineColor = mindtrackCssVar("--chart-line", "#059669");
+  const fillColor = mindtrackCssVar("--chart-fill", "rgba(5, 150, 105, 0.14)");
+  const pointBorder = mindtrackCssVar("--chart-point-border", lineColor);
+  const pointBg = mindtrackCssVar("--chart-point-bg", "#ffffff");
+  const tickColor = mindtrackCssVar("--color-muted", "#64748b");
+  const tooltipBg = mindtrackCssVar("--color-surface", "rgba(15, 23, 42, 0.95)");
+  const tooltipFg = mindtrackCssVar("--color-text", "#f8fafc");
   trendChartInstance = new Chart(ctx, {
     type: "line",
     data: {
@@ -157,15 +175,15 @@ async function loadChart() {
         {
           label: "Completions",
           data: values,
-          borderColor: "#0f6e56",
-          backgroundColor: "rgba(15, 110, 86, 0.12)",
+          borderColor: lineColor,
+          backgroundColor: fillColor,
           tension: 0.35,
           fill: true,
-          borderWidth: 3,
-          pointRadius: 6,
-          pointHoverRadius: 9,
-          pointBackgroundColor: "#fff",
-          pointBorderColor: "#0f6e56",
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: pointBg,
+          pointBorderColor: pointBorder,
           pointBorderWidth: 2,
         },
       ],
@@ -178,11 +196,15 @@ async function loadChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "rgba(15, 23, 42, 0.92)",
+          backgroundColor: tooltipBg,
+          titleColor: tooltipFg,
+          bodyColor: tooltipFg,
           titleFont: { family: ff, size: 13 },
           bodyFont: { family: ff, size: 13 },
           padding: 10,
           cornerRadius: 8,
+          borderColor: mindtrackCssVar("--color-border", "rgba(148, 163, 184, 0.3)"),
+          borderWidth: 1,
         },
       },
       scales: {
@@ -191,7 +213,7 @@ async function loadChart() {
           ticks: {
             maxTicksLimit: 3,
             font: { family: ff, size: 12 },
-            color: "#64748b",
+            color: tickColor,
           },
         },
         y: {
@@ -202,7 +224,7 @@ async function loadChart() {
             stepSize: 1,
             precision: 0,
             font: { family: ff, size: 12 },
-            color: "#64748b",
+            color: tickColor,
           },
         },
       },
@@ -222,7 +244,12 @@ function renderInsight(insight) {
     body.innerHTML = `
       <div class="insight-empty">
         <strong>No coach note yet.</strong><br />
-        Log a habit once to see an automatic welcome message. After more activity, tap <em>New insight</em> for a full AI coach note (works great even in your first weeks).
+        Log a habit once for a short welcome message. After a few days of activity, use
+        <em>New insight</em> for a fuller note—still useful in your first weeks.
+        <ul>
+          <li>Complete at least one habit today.</li>
+          <li>Come back after more logs for richer patterns.</li>
+        </ul>
       </div>`;
     return;
   }
@@ -238,17 +265,17 @@ function renderInsight(insight) {
     <div class="insight-grid">
       <div class="insight-block compliment">
         <div class="insight-icon" aria-hidden="true">✨</div>
-        <h4>Compliment</h4>
+        <h4>What is going well</h4>
         <p>${escapeHtml(insight.compliment)}</p>
       </div>
       <div class="insight-block observation">
         <div class="insight-icon" aria-hidden="true">🔍</div>
-        <h4>Observation</h4>
+        <h4>Pattern</h4>
         <p>${escapeHtml(insight.observation)}</p>
       </div>
       <div class="insight-block tip">
         <div class="insight-icon" aria-hidden="true">💡</div>
-        <h4>Tip</h4>
+        <h4>Next step</h4>
         <p>${escapeHtml(insight.tip)}</p>
       </div>
     </div>`;
@@ -259,7 +286,19 @@ function renderInsightError(message) {
   const meta = document.getElementById("insight-meta");
   meta.hidden = true;
   meta.textContent = "";
-  body.innerHTML = `<div class="insight-error">${escapeHtml(message)}</div>`;
+  body.innerHTML = `
+    <div class="insight-error" role="alert">
+      ${escapeHtml(message)}
+      <div class="insight-error__actions">
+        <button type="button" class="btn-ghost btn-insight-retry" id="insight-retry-btn">Try again</button>
+      </div>
+    </div>`;
+  const retry = document.getElementById("insight-retry-btn");
+  if (retry) {
+    retry.addEventListener("click", () => {
+      loadInsight();
+    });
+  }
 }
 
 async function loadInsight() {
@@ -286,7 +325,7 @@ refreshBtn.addEventListener("click", async () => {
   try {
     const data = await apiFetch("/api/ai/generate", "POST");
     renderInsight(data.insight);
-    showToast("New insight ready.");
+    showToast("New insight ready.", "success");
   } catch (e) {
     const msg = e && e.message ? e.message : "Could not generate insight.";
     renderInsightError(msg);
@@ -366,7 +405,7 @@ async function loadQuickLog() {
         await apiFetch("/api/logs", "POST", { habit_id: habit.id, note: "" });
         const n = parseInt(countEl.textContent, 10) || 0;
         countEl.textContent = String(n + 1);
-        showToast(`${habit.name} logged`);
+        showToast(`${habit.name} logged.`, "success");
         await loadKpis();
       } catch (e) {
         showToast(e && e.message ? e.message : "Log failed");
@@ -378,6 +417,10 @@ async function loadQuickLog() {
     container.appendChild(row);
   });
 }
+
+document.addEventListener("mindtrack-theme-changed", () => {
+  loadChart().catch(() => {});
+});
 
 (async function dashboardInit() {
   try {

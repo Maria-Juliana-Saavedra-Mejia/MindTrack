@@ -2,6 +2,8 @@
 
 MindTrack is a habit-tracking web app for students and young professionals. You register once, sign in with email and password, then manage habits, log completions, see streaks and charts on the dashboard, review a month calendar of activity, and optionally generate short AI coach notes from your recent data.
 
+**Live site (GitHub Pages):** [https://maria-juliana-saavedra-mejia.github.io/MindTrack/](https://maria-juliana-saavedra-mejia.github.io/MindTrack/)
+
 ## Quick start
 
 You need **Python 3.11+**, **MongoDB** reachable from your machine, and a virtual environment.

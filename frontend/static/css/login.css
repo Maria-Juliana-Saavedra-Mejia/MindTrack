@@ -12,7 +12,7 @@ body {
 }
 
 .brand-panel {
-  background: linear-gradient(145deg, #0f6e56, #0a4f3f);
+  background: linear-gradient(145deg, #047857 0%, #064e3b 55%, #022c22 100%);
   color: #fff;
   padding: 3rem;
   display: flex;
@@ -134,9 +134,9 @@ body {
   padding: 0.85rem 1rem;
   font-size: 0.85rem;
   line-height: 1.45;
-  color: var(--color-text-muted, #4a5568);
-  background: #f0f9f6;
-  border: 1px solid rgba(15, 110, 86, 0.25);
+  color: var(--color-muted);
+  background: var(--color-primary-soft);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
   border-radius: var(--radius-md);
   max-width: 28rem;
 }
@@ -164,7 +164,7 @@ input[type="text"] {
 input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(15, 110, 86, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 .checkbox-row {

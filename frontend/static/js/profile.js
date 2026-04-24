@@ -20,6 +20,11 @@
     document.querySelectorAll(".profile-theme-pill").forEach((btn) => {
       btn.classList.toggle("is-active", btn.getAttribute("data-theme") === t);
     });
+    try {
+      window.dispatchEvent(new CustomEvent("mindtrack-theme-changed", { detail: { theme: t } }));
+    } catch (e) {
+      /* */
+    }
   }
 
   function applyCompact(on) {
