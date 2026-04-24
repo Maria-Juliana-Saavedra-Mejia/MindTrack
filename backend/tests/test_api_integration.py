@@ -451,6 +451,39 @@ def test_ai_generate_validation(client, mongo_stub):
     assert resp.status_code == 400
 
 
+def test_ai_generate_missing_openai_key_returns_503(mongo_stub, monkeypatch):
+    """When OPENAI_API_KEY is unset, do not call OpenAI; return a clear 503."""
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    from fapi.app import build_app
+    from starlette.testclient import TestClient
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Run",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 5
+    logs.find.return_value = FakeCursor([])
+    with TestClient(build_app()) as client:
+        token = _token(client, uid)
+        resp = client.post(
+            "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+        )
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body.get("error") is True
+    assert "OPENAI_API_KEY" in body["message"]
+    assert "not set" in body["message"].lower() or "not configured" in body["message"].lower()
+
+
 def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):
     from openai import AuthenticationError
 

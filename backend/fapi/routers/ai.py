@@ -4,8 +4,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-from openai import OpenAIError
+from openai import APIConnectionError, AuthenticationError, OpenAIError, RateLimitError
 
+from app.config import Config
 from app.utils.logger import get_logger
 from fapi.deps import get_jwt_sub
 
@@ -28,6 +29,20 @@ def generate(
     request: Request,
     user_id: Annotated[str, Depends(get_jwt_sub)],
 ):
+    if Config.openai_key_missing():
+        logger.warning("AI generate skipped: OPENAI_API_KEY is not set")
+        return JSONResponse(
+            content={
+                "error": True,
+                "message": (
+                    "OpenAI is not configured: OPENAI_API_KEY is not set on this server. "
+                    "On Render (or your host), add environment variable OPENAI_API_KEY with "
+                    "a valid secret key from https://platform.openai.com/api-keys — see README."
+                ),
+                "status": 503,
+            },
+            status_code=503,
+        )
     try:
         result = request.app.state.ai_service.generate_insights(user_id)
         logger.info("Generated AI insight for user %s", user_id)
@@ -38,14 +53,54 @@ def generate(
             content={"error": True, "message": str(exc), "status": 400},
             status_code=400,
         )
+    except AuthenticationError as exc:
+        logger.warning("OpenAI authentication failed: %s", exc, exc_info=True)
+        return JSONResponse(
+            content={
+                "error": True,
+                "message": (
+                    "OpenAI rejected this API key (invalid or revoked). Check OPENAI_API_KEY "
+                    "on the server for typos or extra spaces; create a new key at "
+                    "https://platform.openai.com/api-keys — see README."
+                ),
+                "status": 502,
+            },
+            status_code=502,
+        )
+    except RateLimitError as exc:
+        logger.warning("OpenAI rate limit: %s", exc, exc_info=True)
+        return JSONResponse(
+            content={
+                "error": True,
+                "message": (
+                    "OpenAI rate limit or quota exceeded. Wait a minute and try again; "
+                    "check billing and usage at https://platform.openai.com — see README."
+                ),
+                "status": 502,
+            },
+            status_code=502,
+        )
+    except APIConnectionError as exc:
+        logger.warning("OpenAI connection error: %s", exc, exc_info=True)
+        return JSONResponse(
+            content={
+                "error": True,
+                "message": (
+                    "Could not reach OpenAI (network error). Retry shortly; on free hosts "
+                    "cold starts can interrupt outbound requests — see README."
+                ),
+                "status": 502,
+            },
+            status_code=502,
+        )
     except OpenAIError as exc:
         logger.warning("OpenAI error during insight generate: %s", exc, exc_info=True)
         return JSONResponse(
             content={
                 "error": True,
                 "message": (
-                    "AI service is unavailable. If you deploy this app, set a valid "
-                    "OPENAI_API_KEY on the server (see README)."
+                    "AI service error from OpenAI. Verify OPENAI_API_KEY, billing, and model "
+                    "access; check server logs for details — see README."
                 ),
                 "status": 502,
             },

@@ -228,6 +228,8 @@ The **`.env` file is only for MongoDB**: `MONGO_URI` and `MONGO_DB_NAME`.
 
 JWT signing and OpenAI are **not** read from `.env` by default. For local development, the app uses built-in placeholder defaults so you can run immediately. **Before production**, set real values in your hosting provider’s environment (for example `JWT_SECRET` and `OPENAI_API_KEY`). Use a long random `JWT_SECRET` and a valid OpenAI API key if you want working AI insights.
 
+**AI insights errors (502 / 503):** On Render (or any host), **`OPENAI_API_KEY` must be set in the service’s environment variables**—not only in a local `.env` file. Use a **Secret** key from [OpenAI API keys](https://platform.openai.com/api-keys) (starts with `sk-...`). After saving, **redeploy** the service so the process picks up the new value. If the key is wrong or revoked, OpenAI returns **401** and the API responds with **502** and a message to check the key; if the variable is **missing**, you get **503** and a “not configured” message. Also confirm your OpenAI account has **billing/credits** and that **`gpt-4o-mini`** is allowed for that key.
+
 ## API (short overview)
 
 | Area        | Examples |

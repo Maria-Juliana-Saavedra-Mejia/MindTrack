@@ -49,6 +49,11 @@ class Config:
         return os.getenv("OPENAI_API_KEY", "").strip() or _DEV_OPENAI_API_KEY
 
     @staticmethod
+    def openai_key_missing():
+        """True when OPENAI_API_KEY is not set (dev placeholder would be used for API calls)."""
+        return not os.getenv("OPENAI_API_KEY", "").strip()
+
+    @staticmethod
     def _jwt_expiry_hours():
         return int(os.getenv("JWT_EXPIRY_HOURS", "24") or "24")
 
