@@ -173,12 +173,21 @@ class AIService:
     def _build_template_coach(self, ctx):
         """Deterministic friendly coach copy without calling OpenAI."""
         idx = self._variety_index(ctx["user_id"])
-        names = [h["name"] for h in ctx["habit_stats"]]
-        primary = names[0] if names else "your habit"
+        names = [
+            (h.get("name") if isinstance(h.get("name"), str) else None) or "your habit"
+            for h in ctx["habit_stats"]
+        ]
+        primary = (names[0] if names else "your habit").strip() or "your habit"
         best = ctx["best_streak"]
         early = ctx["early"]
         total_logs = ctx["total_logs"]
-        most_missed = ctx["most_missed"]
+        raw_missed = ctx.get("most_missed")
+        most_label = (
+            (raw_missed if isinstance(raw_missed, str) else None)
+            or primary
+            or "your habit"
+        )
+        most_label = most_label.strip() or "your habit"
         low = ctx["lowest_rate"]
         window = ctx["window_days"]
         avg_rate = (
@@ -220,16 +229,16 @@ class AIService:
         if not any_logs:
             observation = (
                 f"In the last ~{window} days there were no logs yet—pick one tiny action "
-                f"for “{most_missed}” so the calendar stops looking empty."
+                f"for “{most_label}” so the calendar stops looking empty."
             )
         elif low < 15:
             observation = (
-                f"“{most_missed}” has the lightest footprint in this window—"
+                f"“{most_label}” has the lightest footprint in this window—"
                 "that is your clearest lever if you want one focused win."
             )
         elif low < 35:
             observation = (
-                f"Coverage is uneven; “{most_missed}” is the habit most asking for a gentler plan or clearer cue."
+                f"Coverage is uneven; “{most_label}” is the habit most asking for a gentler plan or clearer cue."
             )
         else:
             observation = (
@@ -238,7 +247,7 @@ class AIService:
 
         tips = [
             f"Anchor “{primary}” to something you already do daily (after brushing teeth, after lunch).",
-            f"Lower the bar for “{most_missed}”: two minutes counts—log it, then stop if you need to.",
+            f"Lower the bar for “{most_label}”: two minutes counts—log it, then stop if you need to.",
             "Pick one habit as the ‘non-negotiable’ this week and protect it like a class you cannot skip.",
             "Review your cues: if evenings fail, try a morning slot for the hardest habit.",
             f"Stack “{primary}” with an existing routine so willpower is not doing all the work.",
@@ -295,6 +304,33 @@ class AIService:
             tip,
             "template",
             habits_analyzed,
+        )
+
+    def generate_emergency_static_insight(self, user_id):
+        """
+        Short fixed coach copy when statistics-based templates cannot be built.
+        Still persisted so GET /api/ai/insights stays consistent.
+        """
+        uid = ObjectId(str(user_id))
+        compliment = (
+            "The personalized coach is temporarily unavailable, but you are still "
+            "making progress by tracking your habits here."
+        )
+        observation = (
+            "When the AI service hiccups, the logs you already saved still tell the truth "
+            "about your week—nothing erases that."
+        )
+        tip = (
+            "Try “New insight” again in a little while. If it keeps failing, you can still "
+            "log completions and review your streaks on the dashboard."
+        )
+        return self._persist_insight_doc(
+            uid,
+            compliment,
+            observation,
+            tip,
+            "template",
+            [],
         )
 
     def generate_insights_openai(self, user_id):

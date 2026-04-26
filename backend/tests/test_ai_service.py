@@ -131,6 +131,14 @@ def test_get_latest_insights_returns_recent(ai_service, mock_db, sample_user_dic
     insights.find_one.assert_called_once()
 
 
+def test_generate_emergency_static_insight(ai_service, mock_db, sample_user_dict):
+    insights = mock_db["ai_insights"]
+    out = ai_service.generate_emergency_static_insight(str(sample_user_dict["_id"]))
+    assert out["insight_type"] == "template"
+    assert "temporarily unavailable" in out["compliment"].lower()
+    insights.insert_one.assert_called_once()
+
+
 def test_generate_insights_template_no_openai(ai_service, mock_db, sample_user_dict):
     """Offline template path inserts insight without calling OpenAI."""
     habits = mock_db["habits"]

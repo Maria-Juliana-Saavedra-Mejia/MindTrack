@@ -234,7 +234,7 @@ JWT signing and OpenAI are **not** read from `.env` by default. For local develo
 - **`local`**: Always template insights; **never** calls OpenAI (useful for zero-cost deploys or demos even when a key exists).
 - **`openai`**: Always requires a real **`OPENAI_API_KEY`**; if it is missing, **`POST /api/ai/generate`** returns **503** (legacy strict behavior).
 
-**AI insights when OpenAI fails:** If **`OPENAI_API_KEY`** is set and the app calls OpenAI but the request fails (rate limit, network error, model error, bad JSON, etc.), **`POST /api/ai/generate`** still returns **200** with a **prepared template** insight (`insight_type: "template"`) built from your habit stats—so the dashboard always gets a coach note when possible. **Invalid or revoked keys** still return **502** (`AuthenticationError`) so you can fix **`OPENAI_API_KEY`**.
+**AI insights when OpenAI fails:** If **`OPENAI_API_KEY`** is set and OpenAI fails (rate limit, network, model error, bad JSON, etc.), the API first tries a **statistics-based template** insight; if that cannot be built or saved, it falls back to a **short fixed coach message** (still **200**, `insight_type: "template"`). **Invalid or revoked keys** still return **502** (`AuthenticationError`) so you can fix **`OPENAI_API_KEY`**. A **503** only means both backups failed (for example MongoDB not accepting writes).
 
 **Other errors:** With **`MINDTRACK_INSIGHT_PROVIDER=openai`** and no key, you get **503**. Confirm billing/credits and that **`gpt-4o-mini`** is allowed when using OpenAI.
 

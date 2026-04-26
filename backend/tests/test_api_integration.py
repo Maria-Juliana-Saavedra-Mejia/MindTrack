@@ -561,6 +561,52 @@ def test_ai_generate_local_skips_openai(monkeypatch, mongo_stub):
     assert resp.json()["insight"]["insight_type"] == "template"
 
 
+def test_openai_failure_uses_static_when_template_raises(client, mongo_stub, monkeypatch):
+    """If OpenAI fails and statistics template raises, static emergency insight still returns 200."""
+    from openai import RateLimitError
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Run",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 5
+    logs.find.return_value = FakeCursor([])
+    token = _token(client, uid)
+
+    def boom_openai(*_a, **_kw):
+        raise RateLimitError("rate", response=MagicMock(), body=None)
+
+    def boom_template(_uid):
+        raise RuntimeError("simulated template failure")
+
+    monkeypatch.setattr(
+        client.app.state.ai_service._client.chat.completions,
+        "create",
+        boom_openai,
+    )
+    monkeypatch.setattr(
+        client.app.state.ai_service,
+        "generate_insights_template",
+        boom_template,
+    )
+    resp = client.post(
+        "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["insight"]["insight_type"] == "template"
+    assert "temporarily unavailable" in data["insight"]["compliment"].lower()
+
+
 def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):
     from openai import AuthenticationError
 

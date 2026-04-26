@@ -29,19 +29,31 @@ def _template_fallback_after_openai_failure(request: Request, user_id: str, reas
             content={"error": True, "message": str(exc), "status": 400},
             status_code=400,
         )
-    except Exception:
-        logger.exception("Template fallback failed after OpenAI error for user %s", user_id)
-        return JSONResponse(
-            content={
-                "error": True,
-                "message": (
-                    "The AI service was unavailable and the backup insight could not be built. "
-                    "Check server logs."
-                ),
-                "status": 503,
-            },
-            status_code=503,
+    except Exception as first_exc:
+        logger.warning(
+            "Data-driven template failed after OpenAI error (%s); trying static backup for user %s",
+            first_exc,
+            user_id,
         )
+        try:
+            result = request.app.state.ai_service.generate_emergency_static_insight(user_id)
+            logger.info("Served static backup insight for user %s", user_id)
+            return {"insight": result}
+        except Exception:
+            logger.exception(
+                "Static backup insight also failed after OpenAI error for user %s", user_id
+            )
+            return JSONResponse(
+                content={
+                    "error": True,
+                    "message": (
+                        "The AI service was unavailable and we could not save even a simple coach note. "
+                        "Check that MongoDB is reachable and server logs for details."
+                    ),
+                    "status": 503,
+                },
+                status_code=503,
+            )
 
 
 @router.get("/insights")
@@ -94,17 +106,25 @@ def generate(
             )
         except Exception as exc:
             logger.exception("Template insight generate failed: %s", exc)
-            return JSONResponse(
-                content={
-                    "error": True,
-                    "message": (
-                        "Could not generate an insight. Check server logs; "
-                        "if log dates in the database look wrong, fix or re-log entries."
-                    ),
-                    "status": 503,
-                },
-                status_code=503,
-            )
+            try:
+                result = request.app.state.ai_service.generate_emergency_static_insight(
+                    user_id
+                )
+                logger.info("Served static backup insight (direct template path) for user %s", user_id)
+                return {"insight": result}
+            except Exception:
+                logger.exception("Static backup also failed for user %s", user_id)
+                return JSONResponse(
+                    content={
+                        "error": True,
+                        "message": (
+                            "Could not generate an insight. Check server logs and MongoDB; "
+                            "if log dates in the database look wrong, fix or re-log entries."
+                        ),
+                        "status": 503,
+                    },
+                    status_code=503,
+                )
 
     try:
         result = request.app.state.ai_service.generate_insights_openai(user_id)
