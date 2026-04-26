@@ -71,7 +71,7 @@ def test_generate_insights_accepts_iso_string_logged_at(ai_service, mock_db, sam
             )
         ]
     )
-    result = ai_service.generate_insights(str(sample_user_dict["_id"]))
+    result = ai_service.generate_insights_openai(str(sample_user_dict["_id"]))
     assert result["compliment"] == "A"
     insights.insert_one.assert_called_once()
 
@@ -101,7 +101,7 @@ def test_generate_insights_calls_openai(ai_service, mock_db, sample_user_dict):
             )
         ]
     )
-    result = ai_service.generate_insights(str(sample_user_dict["_id"]))
+    result = ai_service.generate_insights_openai(str(sample_user_dict["_id"]))
     assert result["compliment"] == "Nice"
     ai_service._client.chat.completions.create.assert_called_once()
     args, kwargs = ai_service._client.chat.completions.create.call_args
@@ -129,6 +129,34 @@ def test_get_latest_insights_returns_recent(ai_service, mock_db, sample_user_dic
     latest = ai_service.get_latest_insights(str(sample_user_dict["_id"]))
     assert latest["compliment"] == "Great"
     insights.find_one.assert_called_once()
+
+
+def test_generate_insights_template_no_openai(ai_service, mock_db, sample_user_dict):
+    """Offline template path inserts insight without calling OpenAI."""
+    habits = mock_db["habits"]
+    logs = mock_db["habit_logs"]
+    insights = mock_db["ai_insights"]
+    habit_id = ObjectId()
+    logs.count_documents.return_value = 8
+    habits.find.return_value = [
+        {
+            "_id": habit_id,
+            "name": "Read",
+            "category": "study",
+            "user_id": sample_user_dict["_id"],
+            "is_active": True,
+        }
+    ]
+    logs.find.return_value = FakeCursor(
+        [{"logged_at": datetime.now(timezone.utc).isoformat()}]
+    )
+    result = ai_service.generate_insights_template(str(sample_user_dict["_id"]))
+    assert result["insight_type"] == "template"
+    assert result["compliment"]
+    assert result["observation"]
+    assert result["tip"]
+    insights.insert_one.assert_called_once()
+    ai_service._client.chat.completions.create.assert_not_called()
 
 
 def test_get_latest_insights_string_generated_at(ai_service, mock_db, sample_user_dict):

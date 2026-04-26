@@ -455,8 +455,9 @@ def test_ai_generate_validation(client, mongo_stub):
 
 
 def test_ai_generate_missing_openai_key_returns_503(mongo_stub, monkeypatch):
-    """When OPENAI_API_KEY is unset, do not call OpenAI; return a clear 503."""
+    """When provider is openai and OPENAI_API_KEY is unset, return 503."""
     monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("MINDTRACK_INSIGHT_PROVIDER", "openai")
     from fapi.app import build_app
 
     uid = ObjectId()
@@ -484,6 +485,80 @@ def test_ai_generate_missing_openai_key_returns_503(mongo_stub, monkeypatch):
     assert body.get("error") is True
     assert "OPENAI_API_KEY" in body["message"]
     assert "not set" in body["message"].lower() or "not configured" in body["message"].lower()
+
+
+def test_ai_generate_auto_without_key_returns_template(mongo_stub, monkeypatch):
+    """Default auto + no key uses template insights (200, no OpenAI)."""
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.delenv("MINDTRACK_INSIGHT_PROVIDER", raising=False)
+    from fapi.app import build_app
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Run",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 5
+    logs.find.return_value = FakeCursor([])
+    with TestClient(build_app()) as client:
+        token = _token(client, uid)
+        resp = client.post(
+            "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+        )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "insight" in data
+    assert data["insight"]["insight_type"] == "template"
+    assert data["insight"]["compliment"]
+    assert data["insight"]["observation"]
+    assert data["insight"]["tip"]
+
+
+def test_ai_generate_local_skips_openai(monkeypatch, mongo_stub):
+    """MINDTRACK_INSIGHT_PROVIDER=local never calls OpenAI even if a key is set."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("MINDTRACK_INSIGHT_PROVIDER", "local")
+    from fapi.app import build_app
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Walk",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 12
+    logs.find.return_value = FakeCursor([])
+    with TestClient(build_app()) as client:
+
+        def boom(*_a, **_kw):
+            raise AssertionError("OpenAI should not be called in local insight mode")
+
+        monkeypatch.setattr(
+            client.app.state.ai_service._client.chat.completions,
+            "create",
+            boom,
+        )
+        token = _token(client, uid)
+        resp = client.post(
+            "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+        )
+    assert resp.status_code == 200
+    assert resp.json()["insight"]["insight_type"] == "template"
 
 
 def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):

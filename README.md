@@ -226,9 +226,15 @@ Example `habit_logs` document (`user_id` / `habit_id` must match real documents 
 
 The **`.env` file is only for MongoDB**: `MONGO_URI` and `MONGO_DB_NAME`.
 
-JWT signing and OpenAI are **not** read from `.env` by default. For local development, the app uses built-in placeholder defaults so you can run immediately. **Before production**, set real values in your hosting provider’s environment (for example `JWT_SECRET` and `OPENAI_API_KEY`). Use a long random `JWT_SECRET` and a valid OpenAI API key if you want working AI insights.
+JWT signing and OpenAI are **not** read from `.env` by default. For local development, the app uses built-in placeholder defaults so you can run immediately. **Before production**, set real values in your hosting provider’s environment (for example `JWT_SECRET` and `OPENAI_API_KEY`). Use a long random `JWT_SECRET` and a valid OpenAI API key if you want OpenAI-generated coach text.
 
-**AI insights errors (429 / 502 / 503):** On Render (or any host), **`OPENAI_API_KEY` must be set in the service’s environment variables**—not only in a local `.env` file. Use a **Secret** key from [OpenAI API keys](https://platform.openai.com/api-keys) (starts with `sk-...`). After saving, **redeploy** the service so the process picks up the new value. **Rate limits or quota** from OpenAI are returned as **429** with guidance to wait and check billing. If the key is wrong or revoked, OpenAI returns **401** and the API responds with **502** and a message to check the key; if the variable is **missing**, you get **503** and a “not configured” message. Also confirm your OpenAI account has **billing/credits** and that **`gpt-4o-mini`** is allowed for that key.
+**`MINDTRACK_INSIGHT_PROVIDER`** (environment variable on the API host) controls how **`POST /api/ai/generate`** works:
+
+- **`auto`** (default): If **`OPENAI_API_KEY`** is set, insights use **OpenAI** (`gpt-4o-mini`). If the key is **missing**, MindTrack uses **free template coach text** (no external API, same JSON shape: compliment / observation / tip, stored with `insight_type: "template"`).
+- **`local`**: Always template insights; **never** calls OpenAI (useful for zero-cost deploys or demos even when a key exists).
+- **`openai`**: Always requires a real **`OPENAI_API_KEY`**; if it is missing, **`POST /api/ai/generate`** returns **503** (legacy strict behavior).
+
+**AI insights errors (429 / 502 / 503)** when using OpenAI: On Render (or any host), set **`OPENAI_API_KEY`** in the service’s environment if you use **`auto`** with a key or **`openai`**. Use a **Secret** key from [OpenAI API keys](https://platform.openai.com/api-keys) (starts with `sk-...`). After saving, **redeploy** the service. **Rate limits or quota** from OpenAI are returned as **429**. If the key is wrong or revoked, the API responds with **502** and a message to check the key; with **`MINDTRACK_INSIGHT_PROVIDER=openai`** and no key, you get **503**. Confirm billing/credits and that **`gpt-4o-mini`** is allowed for that key when using OpenAI.
 
 ## API (short overview)
 

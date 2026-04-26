@@ -54,6 +54,20 @@ class Config:
         return not os.getenv("OPENAI_API_KEY", "").strip()
 
     @staticmethod
+    def insight_provider():
+        """
+        How POST /api/ai/generate produces insights.
+
+        - auto (default): OpenAI when OPENAI_API_KEY is set; otherwise offline templates.
+        - local: always offline templates (no OpenAI), even if a key is set.
+        - openai: always require a real key; missing key returns 503.
+        """
+        raw = os.getenv("MINDTRACK_INSIGHT_PROVIDER", "").strip().lower()
+        if raw in ("openai", "local", "auto"):
+            return raw
+        return "auto"
+
+    @staticmethod
     def _jwt_expiry_hours():
         return int(os.getenv("JWT_EXPIRY_HOURS", "24") or "24")
 

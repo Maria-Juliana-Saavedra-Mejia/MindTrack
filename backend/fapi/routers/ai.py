@@ -29,23 +29,56 @@ def generate(
     request: Request,
     user_id: Annotated[str, Depends(get_jwt_sub)],
 ):
-    if Config.openai_key_missing():
-        logger.warning("AI generate skipped: OPENAI_API_KEY is not set")
+    provider = Config.insight_provider()
+    use_template = provider == "local" or (
+        provider == "auto" and Config.openai_key_missing()
+    )
+
+    if provider == "openai" and Config.openai_key_missing():
+        logger.warning("AI generate skipped: OPENAI_API_KEY is not set (insight provider=openai)")
         return JSONResponse(
             content={
                 "error": True,
                 "message": (
                     "OpenAI is not configured: OPENAI_API_KEY is not set on this server. "
                     "On Render (or your host), add environment variable OPENAI_API_KEY with "
-                    "a valid secret key from https://platform.openai.com/api-keys — see README."
+                    "a valid secret key from https://platform.openai.com/api-keys — see README. "
+                    "Or set MINDTRACK_INSIGHT_PROVIDER=auto (default) to use free template insights "
+                    "when no key is present."
                 ),
                 "status": 503,
             },
             status_code=503,
         )
+
+    if use_template:
+        try:
+            result = request.app.state.ai_service.generate_insights_template(user_id)
+            logger.info("Generated template insight for user %s", user_id)
+            return {"insight": result}
+        except ValueError as exc:
+            logger.warning("AI template generate validation error: %s", exc)
+            return JSONResponse(
+                content={"error": True, "message": str(exc), "status": 400},
+                status_code=400,
+            )
+        except Exception as exc:
+            logger.exception("Template insight generate failed: %s", exc)
+            return JSONResponse(
+                content={
+                    "error": True,
+                    "message": (
+                        "Could not generate an insight. Check server logs; "
+                        "if log dates in the database look wrong, fix or re-log entries."
+                    ),
+                    "status": 503,
+                },
+                status_code=503,
+            )
+
     try:
-        result = request.app.state.ai_service.generate_insights(user_id)
-        logger.info("Generated AI insight for user %s", user_id)
+        result = request.app.state.ai_service.generate_insights_openai(user_id)
+        logger.info("Generated OpenAI insight for user %s", user_id)
         return {"insight": result}
     except ValueError as exc:
         logger.warning("AI generate validation error: %s", exc)

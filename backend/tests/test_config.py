@@ -21,6 +21,23 @@ def test_validate_success(monkeypatch):
     Config.validate()
 
 
+def test_insight_provider_defaults_auto(monkeypatch):
+    monkeypatch.delenv("MINDTRACK_INSIGHT_PROVIDER", raising=False)
+    assert Config.insight_provider() == "auto"
+
+
+def test_insight_provider_invalid_falls_back_auto(monkeypatch):
+    monkeypatch.setenv("MINDTRACK_INSIGHT_PROVIDER", "bogus")
+    assert Config.insight_provider() == "auto"
+
+
+def test_insight_provider_openai_local(monkeypatch):
+    monkeypatch.setenv("MINDTRACK_INSIGHT_PROVIDER", "openai")
+    assert Config.insight_provider() == "openai"
+    monkeypatch.setenv("MINDTRACK_INSIGHT_PROVIDER", "local")
+    assert Config.insight_provider() == "local"
+
+
 def test_mongo_uri_strips_trailing_slash(monkeypatch):
     monkeypatch.setenv("MONGO_URI", "mongodb://localhost:27017/")
     monkeypatch.setenv("MONGO_DB_NAME", "mindtrack_test")
