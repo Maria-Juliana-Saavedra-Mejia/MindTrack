@@ -7,6 +7,8 @@ from unittest.mock import MagicMock
 import pytest
 from bson import ObjectId
 
+from app.services.ai_service import ephemeral_insight_payload
+
 from tests.conftest import FakeCursor
 
 
@@ -129,6 +131,15 @@ def test_get_latest_insights_returns_recent(ai_service, mock_db, sample_user_dic
     latest = ai_service.get_latest_insights(str(sample_user_dict["_id"]))
     assert latest["compliment"] == "Great"
     insights.find_one.assert_called_once()
+
+
+def test_ephemeral_insight_payload_kinds():
+    a = ephemeral_insight_payload("persist_failed")
+    assert a["insight_type"] == "ephemeral"
+    assert "MongoDB" in a["observation"] or "database" in a["compliment"].lower()
+    b = ephemeral_insight_payload("openai_key_required")
+    assert b["insight_type"] == "ephemeral"
+    assert "OPENAI_API_KEY" in b["observation"]
 
 
 def test_generate_emergency_static_insight(ai_service, mock_db, sample_user_dict):

@@ -232,11 +232,11 @@ JWT signing and OpenAI are **not** read from `.env` by default. For local develo
 
 - **`auto`** (default): If **`OPENAI_API_KEY`** is set, insights use **OpenAI** (`gpt-4o-mini`). If the key is **missing**, MindTrack uses **free template coach text** (no external API, same JSON shape: compliment / observation / tip, stored with `insight_type: "template"`).
 - **`local`**: Always template insights; **never** calls OpenAI (useful for zero-cost deploys or demos even when a key exists).
-- **`openai`**: Always requires a real **`OPENAI_API_KEY`**; if it is missing, **`POST /api/ai/generate`** returns **503** (legacy strict behavior).
+- **`openai`**: Expects a real **`OPENAI_API_KEY`** for stored OpenAI insights; if the key is missing, generate still returns **200** with **`insight_type: "ephemeral"`** explaining how to fix configuration (no **503** for that case).
 
-**AI insights when OpenAI fails:** If **`OPENAI_API_KEY`** is set and OpenAI fails (rate limit, network, model error, bad JSON, etc.), the API first tries a **statistics-based template** insight; if that cannot be built or saved, it falls back to a **short fixed coach message** (still **200**, `insight_type: "template"`). **Invalid or revoked keys** still return **502** (`AuthenticationError`) so you can fix **`OPENAI_API_KEY`**. A **503** only means both backups failed (for example MongoDB not accepting writes).
+**AI insights when OpenAI fails:** If **`OPENAI_API_KEY`** is set and OpenAI fails (rate limit, network, model error, bad JSON, etc.), the API tries a **statistics-based template**, then a **short fixed coach message** saved as **`template`**. **Invalid or revoked keys** still return **502** (`AuthenticationError`). If **MongoDB cannot write**, the API returns **200** with **`ephemeral`** text (not persisted) instead of **503**.
 
-**Other errors:** With **`MINDTRACK_INSIGHT_PROVIDER=openai`** and no key, you get **503**. Confirm billing/credits and that **`gpt-4o-mini`** is allowed when using OpenAI.
+**Ephemeral insights (`insight_type: "ephemeral"`):** If the database cannot save an insight, or **`MINDTRACK_INSIGHT_PROVIDER=openai`** is set without **`OPENAI_API_KEY`**, **`POST /api/ai/generate`** still returns **HTTP 200** with coach text that is **not stored**—fix **`MONGO_URI` / Atlas access** or env vars, then generate again so notes persist. When using OpenAI, confirm billing/credits and that **`gpt-4o-mini`** is allowed for your key.
 
 ## API (short overview)
 

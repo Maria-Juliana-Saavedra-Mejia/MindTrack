@@ -454,8 +454,8 @@ def test_ai_generate_validation(client, mongo_stub):
     assert resp.status_code == 400
 
 
-def test_ai_generate_missing_openai_key_returns_503(mongo_stub, monkeypatch):
-    """When provider is openai and OPENAI_API_KEY is unset, return 503."""
+def test_ai_generate_missing_openai_key_returns_ephemeral_insight(mongo_stub, monkeypatch):
+    """When provider is openai and OPENAI_API_KEY is unset, return 200 with ephemeral coach text."""
     monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("MINDTRACK_INSIGHT_PROVIDER", "openai")
     from fapi.app import build_app
@@ -480,11 +480,10 @@ def test_ai_generate_missing_openai_key_returns_503(mongo_stub, monkeypatch):
         resp = client.post(
             "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
         )
-    assert resp.status_code == 503
-    body = resp.json()
-    assert body.get("error") is True
-    assert "OPENAI_API_KEY" in body["message"]
-    assert "not set" in body["message"].lower() or "not configured" in body["message"].lower()
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["insight"]["insight_type"] == "ephemeral"
+    assert "OPENAI_API_KEY" in data["insight"]["observation"]
 
 
 def test_ai_generate_auto_without_key_returns_template(mongo_stub, monkeypatch):
@@ -559,6 +558,40 @@ def test_ai_generate_local_skips_openai(monkeypatch, mongo_stub):
         )
     assert resp.status_code == 200
     assert resp.json()["insight"]["insight_type"] == "template"
+
+
+def test_generate_returns_ephemeral_when_mongo_insert_always_fails(mongo_stub, monkeypatch):
+    """If ai_insights.insert_one always fails, user still gets 200 with in-memory coach text."""
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.delenv("MINDTRACK_INSIGHT_PROVIDER", raising=False)
+    from fapi.app import build_app
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Run",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 5
+    logs.find.return_value = FakeCursor([])
+    insights = mongo_stub["ai_insights"]
+    insights.insert_one.side_effect = RuntimeError("simulated Mongo write failure")
+    with TestClient(build_app()) as client:
+        token = _token(client, uid)
+        resp = client.post(
+            "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["insight"]["insight_type"] == "ephemeral"
+    assert "database" in body["insight"]["compliment"].lower()
 
 
 def test_openai_failure_uses_static_when_template_raises(client, mongo_stub, monkeypatch):

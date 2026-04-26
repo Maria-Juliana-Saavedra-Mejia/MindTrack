@@ -256,7 +256,11 @@ function renderInsight(insight) {
   const when = formatInsightTimestamp(insight.generated_at);
   if (when) {
     meta.hidden = false;
-    meta.textContent = `Last updated · ${when}`;
+    let line = `Last updated · ${when}`;
+    if (insight.insight_type === "ephemeral") {
+      line += " · not saved (fix MongoDB or API key on server)";
+    }
+    meta.textContent = line;
   } else {
     meta.hidden = true;
     meta.textContent = "";

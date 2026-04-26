@@ -60,7 +60,7 @@ class Config:
 
         - auto (default): OpenAI when OPENAI_API_KEY is set; otherwise offline templates.
         - local: always offline templates (no OpenAI), even if a key is set.
-        - openai: always require a real key; missing key returns 503.
+        - openai: expects a real key for stored OpenAI insights; missing key yields ephemeral text.
         """
         raw = os.getenv("MINDTRACK_INSIGHT_PROVIDER", "").strip().lower()
         if raw in ("openai", "local", "auto"):

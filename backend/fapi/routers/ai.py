@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from openai import APIConnectionError, AuthenticationError, OpenAIError, RateLimitError
 
 from app.config import Config
+from app.services.ai_service import ephemeral_insight_payload
 from app.utils.logger import get_logger
 from fapi.deps import get_jwt_sub
 
@@ -41,19 +42,11 @@ def _template_fallback_after_openai_failure(request: Request, user_id: str, reas
             return {"insight": result}
         except Exception:
             logger.exception(
-                "Static backup insight also failed after OpenAI error for user %s", user_id
+                "Static backup insight also failed after OpenAI error for user %s; "
+                "returning in-memory coach text (not persisted)",
+                user_id,
             )
-            return JSONResponse(
-                content={
-                    "error": True,
-                    "message": (
-                        "The AI service was unavailable and we could not save even a simple coach note. "
-                        "Check that MongoDB is reachable and server logs for details."
-                    ),
-                    "status": 503,
-                },
-                status_code=503,
-            )
+            return {"insight": ephemeral_insight_payload("persist_failed")}
 
 
 @router.get("/insights")
@@ -77,21 +70,12 @@ def generate(
     )
 
     if provider == "openai" and Config.openai_key_missing():
-        logger.warning("AI generate skipped: OPENAI_API_KEY is not set (insight provider=openai)")
-        return JSONResponse(
-            content={
-                "error": True,
-                "message": (
-                    "OpenAI is not configured: OPENAI_API_KEY is not set on this server. "
-                    "On Render (or your host), add environment variable OPENAI_API_KEY with "
-                    "a valid secret key from https://platform.openai.com/api-keys — see README. "
-                    "Or set MINDTRACK_INSIGHT_PROVIDER=auto (default) to use free template insights "
-                    "when no key is present."
-                ),
-                "status": 503,
-            },
-            status_code=503,
+        logger.warning(
+            "AI generate: OPENAI_API_KEY missing with MINDTRACK_INSIGHT_PROVIDER=openai; "
+            "returning ephemeral coach text for user %s",
+            user_id,
         )
+        return {"insight": ephemeral_insight_payload("openai_key_required")}
 
     if use_template:
         try:
@@ -113,18 +97,11 @@ def generate(
                 logger.info("Served static backup insight (direct template path) for user %s", user_id)
                 return {"insight": result}
             except Exception:
-                logger.exception("Static backup also failed for user %s", user_id)
-                return JSONResponse(
-                    content={
-                        "error": True,
-                        "message": (
-                            "Could not generate an insight. Check server logs and MongoDB; "
-                            "if log dates in the database look wrong, fix or re-log entries."
-                        ),
-                        "status": 503,
-                    },
-                    status_code=503,
+                logger.exception(
+                    "Static backup also failed for user %s; returning in-memory coach text",
+                    user_id,
                 )
+                return {"insight": ephemeral_insight_payload("persist_failed")}
 
     try:
         result = request.app.state.ai_service.generate_insights_openai(user_id)
