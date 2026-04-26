@@ -20,41 +20,23 @@ def _format_generated_at(value):
     return str(value)
 
 
-def ephemeral_insight_payload(kind: str = "persist_failed") -> dict:
+def ephemeral_insight_payload(_kind: str = "persist_failed") -> dict:
     """
-    Coach-style JSON returned with HTTP 200 when we cannot write to MongoDB or when
-    the server is misconfigured for OpenAI-only mode. Not stored — GET /insights may
-    still show an older saved insight until persistence works again.
+    Generic coach copy for HTTP 200 when insights cannot be persisted or OpenAI-only
+    mode has no key. Operators distinguish `kind` in server logs; users see the same
+    friendly text. Not stored — GET /insights may still show an older saved insight.
     """
     now = datetime.now(timezone.utc).isoformat()
-    if kind == "openai_key_required":
-        return {
-            "compliment": (
-                "This server is set to use OpenAI for coach notes, but no API key is configured yet."
-            ),
-            "observation": (
-                "On Render, add environment variable OPENAI_API_KEY, or set "
-                "MINDTRACK_INSIGHT_PROVIDER=auto (the default) to use free template insights without a key."
-            ),
-            "tip": (
-                "After changing environment variables on your host, trigger a new deploy so the "
-                "service picks them up."
-            ),
-            "generated_at": now,
-            "insight_type": "ephemeral",
-        }
+    # Deliberately neutral copy — details are logged on the server via `kind`.
     return {
         "compliment": (
-            "We could not save this coach note to the database right now, but you can still "
-            "log habits and use the rest of MindTrack."
+            "Showing up for your habits here is already a meaningful step—small wins count."
         ),
         "observation": (
-            "This usually means MongoDB is unreachable from the API (wrong MONGO_URI, Atlas IP "
-            "allowlist, or the database is paused). Fix the connection on your host and try again."
+            "Consistency beats intensity: a few honest check-ins this week beat a perfect plan you never touch."
         ),
         "tip": (
-            "Check Render logs for the exact error, confirm MONGO_URI and MONGO_DB_NAME in "
-            "environment variables, and that your Atlas cluster allows Render’s outbound IPs."
+            "Pick one habit to protect tomorrow, log when you can, and come back for a fresh coach note anytime."
         ),
         "generated_at": now,
         "insight_type": "ephemeral",
@@ -354,16 +336,13 @@ class AIService:
         """
         uid = ObjectId(str(user_id))
         compliment = (
-            "The personalized coach is temporarily unavailable, but you are still "
-            "making progress by tracking your habits here."
+            "You are building a clearer picture of your week every time you check in—that kind of awareness matters."
         )
         observation = (
-            "When the AI service hiccups, the logs you already saved still tell the truth "
-            "about your week—nothing erases that."
+            "Momentum often looks quiet: a steady rhythm of small actions beats waiting for the perfect day."
         )
         tip = (
-            "Try “New insight” again in a little while. If it keeps failing, you can still "
-            "log completions and review your streaks on the dashboard."
+            "Choose one cue tomorrow (after coffee, before bed) and link it to a single habit so logging feels natural."
         )
         return self._persist_insight_doc(
             uid,

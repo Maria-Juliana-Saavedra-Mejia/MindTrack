@@ -46,6 +46,10 @@ def _template_fallback_after_openai_failure(request: Request, user_id: str, reas
                 "returning in-memory coach text (not persisted)",
                 user_id,
             )
+            logger.warning(
+                "Returning generic ephemeral insight for user %s (after OpenAI failure)",
+                user_id,
+            )
             return {"insight": ephemeral_insight_payload("persist_failed")}
 
 
@@ -99,6 +103,10 @@ def generate(
             except Exception:
                 logger.exception(
                     "Static backup also failed for user %s; returning in-memory coach text",
+                    user_id,
+                )
+                logger.warning(
+                    "Returning generic ephemeral insight for user %s (template path)",
                     user_id,
                 )
                 return {"insight": ephemeral_insight_payload("persist_failed")}

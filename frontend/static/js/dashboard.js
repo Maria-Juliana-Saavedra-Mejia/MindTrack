@@ -253,14 +253,15 @@ function renderInsight(insight) {
       </div>`;
     return;
   }
+  if (insight.insight_type === "ephemeral" && typeof console !== "undefined") {
+    console.debug(
+      "[MindTrack] Coach note was served without persisting (see server logs for details)."
+    );
+  }
   const when = formatInsightTimestamp(insight.generated_at);
   if (when) {
     meta.hidden = false;
-    let line = `Last updated · ${when}`;
-    if (insight.insight_type === "ephemeral") {
-      line += " · not saved (fix MongoDB or API key on server)";
-    }
-    meta.textContent = line;
+    meta.textContent = `Last updated · ${when}`;
   } else {
     meta.hidden = true;
     meta.textContent = "";
@@ -310,10 +311,12 @@ async function loadInsight() {
     const data = await apiFetch("/api/ai/insights");
     renderInsight(data.insight);
   } catch (e) {
+    const raw = e && e.message ? e.message : "";
+    if (typeof console !== "undefined" && console.debug) {
+      console.debug("[MindTrack] loadInsight failed", raw);
+    }
     renderInsightError(
-      e && e.message
-        ? e.message
-        : "Could not load insights. Check your connection and API settings."
+      "We could not refresh your coach note. Please try again in a moment."
     );
   }
 }
@@ -331,15 +334,14 @@ refreshBtn.addEventListener("click", async () => {
     renderInsight(data.insight);
     showToast("New insight ready.", "success");
   } catch (e) {
-    let msg = e && e.message ? e.message : "Could not generate insight.";
-    if (e && e.status === 429) {
-      const detail = msg.replace(/\s*\(429\)\s*$/, "").trim();
-      msg =
-        "Too many requests from the AI service. " +
-        (detail || "Wait a bit and try again.");
+    const raw = e && e.message ? e.message : "";
+    if (typeof console !== "undefined" && console.debug) {
+      console.debug("[MindTrack] New insight request failed", e && e.status, raw);
     }
-    renderInsightError(msg);
-    showToast(msg);
+    const displayMsg =
+      "We could not prepare a new coach note right now. Please try again in a moment.";
+    renderInsightError(displayMsg);
+    showToast(displayMsg);
   } finally {
     refreshBtn.disabled = false;
     if (label) {

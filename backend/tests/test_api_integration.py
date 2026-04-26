@@ -483,7 +483,7 @@ def test_ai_generate_missing_openai_key_returns_ephemeral_insight(mongo_stub, mo
     assert resp.status_code == 200
     data = resp.json()
     assert data["insight"]["insight_type"] == "ephemeral"
-    assert "OPENAI_API_KEY" in data["insight"]["observation"]
+    assert data["insight"]["compliment"] and "habits" in data["insight"]["compliment"].lower()
 
 
 def test_ai_generate_auto_without_key_returns_template(mongo_stub, monkeypatch):
@@ -591,7 +591,7 @@ def test_generate_returns_ephemeral_when_mongo_insert_always_fails(mongo_stub, m
     assert resp.status_code == 200
     body = resp.json()
     assert body["insight"]["insight_type"] == "ephemeral"
-    assert "database" in body["insight"]["compliment"].lower()
+    assert body["insight"]["compliment"] and body["insight"]["tip"]
 
 
 def test_openai_failure_uses_static_when_template_raises(client, mongo_stub, monkeypatch):
@@ -637,7 +637,7 @@ def test_openai_failure_uses_static_when_template_raises(client, mongo_stub, mon
     assert resp.status_code == 200
     data = resp.json()
     assert data["insight"]["insight_type"] == "template"
-    assert "temporarily unavailable" in data["insight"]["compliment"].lower()
+    assert data["insight"]["compliment"] and "momentum" in data["insight"]["observation"].lower()
 
 
 def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):

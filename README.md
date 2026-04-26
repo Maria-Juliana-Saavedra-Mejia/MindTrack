@@ -236,7 +236,7 @@ JWT signing and OpenAI are **not** read from `.env` by default. For local develo
 
 **AI insights when OpenAI fails:** If **`OPENAI_API_KEY`** is set and OpenAI fails (rate limit, network, model error, bad JSON, etc.), the API tries a **statistics-based template**, then a **short fixed coach message** saved as **`template`**. **Invalid or revoked keys** still return **502** (`AuthenticationError`). If **MongoDB cannot write**, the API returns **200** with **`ephemeral`** text (not persisted) instead of **503**.
 
-**Ephemeral insights (`insight_type: "ephemeral"`):** If the database cannot save an insight, or **`MINDTRACK_INSIGHT_PROVIDER=openai`** is set without **`OPENAI_API_KEY`**, **`POST /api/ai/generate`** still returns **HTTP 200** with coach text that is **not stored**—fix **`MONGO_URI` / Atlas access** or env vars, then generate again so notes persist. When using OpenAI, confirm billing/credits and that **`gpt-4o-mini`** is allowed for your key.
+**Ephemeral insights (`insight_type: "ephemeral"`):** If an insight cannot be saved, or **`MINDTRACK_INSIGHT_PROVIDER=openai`** is set without **`OPENAI_API_KEY`**, generate still returns **HTTP 200** with **generic coach copy** (not tied to live stats) that is **not stored**—operators see the reason in **server logs**; fix **`MONGO_URI` / Atlas**, env vars, or the key, then generate again for persisted notes. When using OpenAI, confirm billing/credits and that **`gpt-4o-mini`** is allowed for your key.
 
 ## API (short overview)
 
