@@ -76,9 +76,9 @@ def generate(
                     "OpenAI rate limit or quota exceeded. Wait a minute and try again; "
                     "check billing and usage at https://platform.openai.com — see README."
                 ),
-                "status": 502,
+                "status": 429,
             },
-            status_code=502,
+            status_code=429,
         )
     except APIConnectionError as exc:
         logger.warning("OpenAI connection error: %s", exc, exc_info=True)

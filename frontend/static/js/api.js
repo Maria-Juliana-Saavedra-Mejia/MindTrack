@@ -780,7 +780,11 @@ async function apiFetch(endpoint, method = "GET", body = null) {
   }
   if (!response.ok) {
     const suffix = response.status ? " (" + response.status + ")" : "";
-    throw new Error((errText || "Request failed") + suffix);
+    const err = new Error((errText || "Request failed") + suffix);
+    if (response.status) {
+      err.status = response.status;
+    }
+    throw err;
   }
   return data;
 }

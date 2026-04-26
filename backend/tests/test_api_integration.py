@@ -524,6 +524,45 @@ def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):
     assert "OPENAI_API_KEY" in body["message"]
 
 
+def test_ai_generate_openai_rate_limit_returns_429(client, mongo_stub, monkeypatch):
+    from openai import RateLimitError
+
+    uid = ObjectId()
+    hid = ObjectId()
+    habits = mongo_stub["habits"]
+    habits.find.return_value = [
+        {
+            "_id": hid,
+            "user_id": uid,
+            "name": "Run",
+            "category": "health",
+            "is_active": True,
+        }
+    ]
+    logs = mongo_stub["habit_logs"]
+    logs.count_documents.return_value = 5
+    logs.find.return_value = FakeCursor([])
+    token = _token(client, uid)
+
+    def boom(*_a, **_kw):
+        raise RateLimitError("rate", response=MagicMock(), body=None)
+
+    monkeypatch.setattr(
+        client.app.state.ai_service._client.chat.completions,
+        "create",
+        boom,
+    )
+    resp = client.post(
+        "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 429
+    body = resp.json()
+    assert body.get("error") is True
+    assert body.get("status") == 429
+    assert "message" in body
+    assert "rate limit" in body["message"].lower() or "quota" in body["message"].lower()
+
+
 def test_create_log(client, mongo_stub):
     uid = ObjectId()
     hid = ObjectId()

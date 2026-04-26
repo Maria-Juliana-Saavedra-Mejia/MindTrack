@@ -327,7 +327,13 @@ refreshBtn.addEventListener("click", async () => {
     renderInsight(data.insight);
     showToast("New insight ready.", "success");
   } catch (e) {
-    const msg = e && e.message ? e.message : "Could not generate insight.";
+    let msg = e && e.message ? e.message : "Could not generate insight.";
+    if (e && e.status === 429) {
+      const detail = msg.replace(/\s*\(429\)\s*$/, "").trim();
+      msg =
+        "Too many requests from the AI service. " +
+        (detail || "Wait a bit and try again.");
+    }
     renderInsightError(msg);
     showToast(msg);
   } finally {
