@@ -599,7 +599,8 @@ def test_ai_generate_openai_error_returns_502(client, mongo_stub, monkeypatch):
     assert "OPENAI_API_KEY" in body["message"]
 
 
-def test_ai_generate_openai_rate_limit_returns_429(client, mongo_stub, monkeypatch):
+def test_ai_generate_openai_rate_limit_falls_back_to_template(client, mongo_stub, monkeypatch):
+    """When OpenAI returns rate limit, API serves prepared template insight (200)."""
     from openai import RateLimitError
 
     uid = ObjectId()
@@ -630,12 +631,12 @@ def test_ai_generate_openai_rate_limit_returns_429(client, mongo_stub, monkeypat
     resp = client.post(
         "/api/ai/generate", headers={"Authorization": f"Bearer {token}"}
     )
-    assert resp.status_code == 429
-    body = resp.json()
-    assert body.get("error") is True
-    assert body.get("status") == 429
-    assert "message" in body
-    assert "rate limit" in body["message"].lower() or "quota" in body["message"].lower()
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["insight"]["insight_type"] == "template"
+    assert data["insight"]["compliment"]
+    assert data["insight"]["observation"]
+    assert data["insight"]["tip"]
 
 
 def test_create_log(client, mongo_stub):
